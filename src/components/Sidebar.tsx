@@ -42,6 +42,14 @@ const items: FeatureItem[] = [
     detailIcon: Eye,
   },
   {
+    name: "Editor",
+    icon: Edit3,
+    mode: "EDITOR",
+    description: "Edit PDF content, modify text, add images, and rearrange pages",
+    features: ["Edit Text", "Add Images", "Rearrange Pages", "Merge PDFs"],
+    detailIcon: Scissors,
+  },
+  {
     name: "Annotations",
     icon: PenLine,
     mode: "ANNOTATIONS",
@@ -57,14 +65,7 @@ const items: FeatureItem[] = [
     features: ["Fill Fields", "Digital Signature", "Validate Data", "Export Forms"],
     detailIcon: FileCheck,
   },
-  {
-    name: "Editor",
-    icon: Edit3,
-    mode: "EDITOR",
-    description: "Edit PDF content, modify text, add images, and rearrange pages",
-    features: ["Edit Text", "Add Images", "Rearrange Pages", "Merge PDFs"],
-    detailIcon: Scissors,
-  },
+  
 ];
 
 export function Sidebar({
