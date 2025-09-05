@@ -197,18 +197,16 @@ export function Sidebar({
                       className="p-1 hover:bg-neutral-700/50 rounded transition-colors"
                     >
                       <ChevronDown
-                        className={`h-3 w-3 text-neutral-500 transition-transform duration-200 ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
+                        className={`h-3 w-3 text-neutral-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
                   </div>
                 )}
 
                 <span
-                  className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-indigo-400 to-indigo-600 transition-opacity duration-200 ${
-                    isActive ? "opacity-100" : "opacity-0"
-                  }`}
+                  className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-indigo-400 to-indigo-600 transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0"
+                    }`}
                 />
               </button>
 
@@ -229,46 +227,58 @@ export function Sidebar({
                     </div>
 
                     <div className="p-4">
-                      <h5 className="text-xs font-medium text-neutral-300 mb-3 uppercase tracking-wider">Features</h5>
+                      <h5 className="text-xs font-medium text-neutral-300 mb-3 uppercase tracking-wider">
+                        Features
+                      </h5>
                       <div className="space-y-2">
                         {item.features.map((feature, idx) => (
                           <div key={idx} className="flex items-center space-x-3 group/feature">
                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 group-hover/feature:bg-indigo-400 transition-colors" />
-                            <span className="text-xs text-neutral-400 group-hover/feature:text-neutral-300 transition-colors">{feature}</span>
+                            <span className="text-xs text-neutral-400 group-hover/feature:text-neutral-300 transition-colors">
+                              {feature}
+                            </span>
                           </div>
                         ))}
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Upload section (active mode only) */}
-              {isActive && !collapsed && (
-                <div className="mt-4 mx-2 animate-in slide-in-from-top-3 duration-500">
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-300 group/upload ${
-                      dragActive ? "border-indigo-400 bg-indigo-500/10" : "border-neutral-600 hover:border-indigo-500 hover:bg-neutral-800/30"
-                    }`}
-                  >
-                    <div className="relative">
-                      <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-neutral-800/50 flex items-center justify-center group-hover/upload:bg-indigo-500/20 transition-colors">
-                        <Upload className="h-5 w-5 text-indigo-400 group-hover/upload:text-indigo-300 transition-colors" />
+                    {/* Upload section — tied to this dropdown */}
+                    {isActive && (
+                      <div className="mt-4 animate-in slide-in-from-top-3 duration-500">
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-300 group/upload ${dragActive
+                              ? "border-indigo-400 bg-indigo-500/10"
+                              : "border-neutral-600 hover:border-indigo-500 hover:bg-neutral-800/30"
+                            }`}
+                        >
+                          <div className="relative">
+                            <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-neutral-800/50 flex items-center justify-center group-hover/upload:bg-indigo-500/20 transition-colors">
+                              <Upload className="h-5 w-5 text-indigo-400 group-hover/upload:text-indigo-300 transition-colors" />
+                            </div>
+
+                            <p className="text-[12px] font-medium text-neutral-300 mb-1 group-hover/upload:text-white transition-colors">
+                              Drop files here or{" "}
+                              <span className="text-indigo-400 group-hover/upload:text-indigo-300">browse</span>
+                            </p>
+
+                            <div className="flex items-center justify-center space-x-3 text-[10px] text-neutral-500">
+                              <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PDF</span>
+                              <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">JPG</span>
+                              <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PNG</span>
+                            </div>
+                          </div>
+
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                        </div>
                       </div>
-
-                      <p className="text-[12px] font-medium text-neutral-300 mb-1 group-hover/upload:text-white transition-colors">
-                        Drop files here or <span className="text-indigo-400 group-hover/upload:text-indigo-300">browse</span>
-                      </p>
-
-                      <div className="flex items-center justify-center space-x-3 text-[10px] text-neutral-500">
-                        <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PDF</span>
-                        <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">JPG</span>
-                        <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PNG</span>
-                      </div>
-                    </div>
-
-                    <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff" className="hidden" onChange={handleFileChange} />
+                    )}
                   </div>
                 </div>
               )}
