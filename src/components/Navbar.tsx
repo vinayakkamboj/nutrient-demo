@@ -18,12 +18,15 @@ export function Navbar() {
       </div>
 
       {/* Right: CTA */}
-      <Button
-        onClick={handleContactClick}
-        className="rounded-md px-2 py-0.5 text-[10px] sm:text-[11px] font-medium bg-indigo-600 text-white hover:bg-indigo-700"
-      >
-        Contact Sales
-      </Button>
+      <div className="flex items-center gap-4">
+        <Button
+          onClick={handleContactClick}
+          className="rounded-md px-2 py-0.5 text-[10px] sm:text-[11px] font-medium bg-indigo-600 text-white hover:bg-indigo-700"
+        >
+          Contact Sales
+        </Button>
+        
+      </div>
     </header>
   )
 }
