@@ -11,6 +11,7 @@ import {
   Highlighter,
   FileCheck,
   Scissors,
+  LayoutDashboard,
 } from "lucide-react";
 import type { ViewerMode } from "./PDFViewer";
 
@@ -129,8 +130,8 @@ export function Sidebar({
       {/* Collapse/Expand pill */}
       <div
         onClick={onToggle}
-        className="absolute top-1/2 -right-5 -translate-y-1/2 cursor-pointer z-50
-                   flex items-center justify-center h-20 w-5
+        className="absolute top-1/2 -right-4 -translate-y-1/2 cursor-pointer z-45
+                   flex items-center justify-center h-14 w-4
                    bg-[#181a1e] hover:bg-[#22252b]
                    rounded-r-md transition-all duration-200 border border-neutral-800
                    group shadow-lg"
@@ -142,17 +143,26 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Header */}
-      {!collapsed && (
-        <div className="px-4 py-6 border-b border-neutral-800/50">
-          <div className="flex items-center space-x-3">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Nutrient</h2>
-              <p className="text-xs text-neutral-400">WebSDK Kit</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Header - Always present but changes content based on collapsed state */}
+<div className="px-4 py-6 border-b border-neutral-800/50 flex items-center justify-center">
+  {collapsed ? (
+    <div className="flex items-center justify-center">
+      <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
+        <LayoutDashboard className="h-4 w-4 text-neutral-400" /> {/* grey icon */}
+      </div>
+    </div>
+  ) : (
+    <div className="flex items-center space-x-3 w-full">
+      <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
+        <LayoutDashboard className="h-4 w-4 text-neutral-400" /> {/* grey icon */}
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-white">Tools</h2>
+        <p className="text-xs text-neutral-400">Select the feature</p>
+      </div>
+    </div>
+  )}
+</div>
 
       {/* Navigation items */}
       <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
@@ -163,27 +173,26 @@ export function Sidebar({
 
           return (
             <div key={item.name} className="relative">
-              {/* Main button */}
               <button
                 title={collapsed ? item.name : undefined}
                 onClick={() => {
-                  console.log("Sidebar: onSelectMode ->", item.mode);
                   onSelectMode(item.mode);
-                  if (!collapsed) {
-                    setExpandedDropdown(item.mode); // auto expand
-                  }
+                  if (!collapsed) setExpandedDropdown(item.mode);
                 }}
                 className={
-                  "group relative w-full flex items-center rounded-lg px-3 py-3 text-[13px] font-medium font-['Inter'] " +
-                  "transition-all duration-200 " +
+                  "group relative w-full flex items-center rounded-lg px-3 py-3 text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
                   (isActive
                     ? "bg-neutral-800/80 text-white shadow-lg border border-neutral-700/50"
-                    : "text-neutral-300 hover:bg-neutral-800/50 hover:text-white") +
+                    : "text-neutral-400 hover:bg-neutral-800/50 hover:text-indigo-400") +
                   (collapsed ? " justify-center" : " justify-between")
                 }
               >
                 <div className="flex items-center">
-                  <Icon className="h-[18px] w-[18px] flex-shrink-0 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+                  <Icon
+                    className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${
+                      isActive ? "text-indigo-400" : "text-neutral-400 group-hover:text-indigo-400"
+                    }`}
+                  />
                   {!collapsed && <span className="ml-3 tracking-tight">{item.name}</span>}
                 </div>
 
@@ -197,16 +206,18 @@ export function Sidebar({
                       className="p-1 hover:bg-neutral-700/50 rounded transition-colors"
                     >
                       <ChevronDown
-                        className={`h-3 w-3 text-neutral-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
-                          }`}
+                        className={`h-3 w-3 text-neutral-500 transition-transform duration-200 ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                   </div>
                 )}
 
                 <span
-                  className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-indigo-400 to-indigo-600 transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0"
-                    }`}
+                  className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-indigo-400 to-indigo-600 transition-opacity duration-200 ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
                 />
               </button>
 
@@ -242,15 +253,15 @@ export function Sidebar({
                       </div>
                     </div>
 
-                    {/* Upload section — tied to this dropdown */}
                     {isActive && (
                       <div className="mt-4 animate-in slide-in-from-top-3 duration-500">
                         <div
                           onClick={() => fileInputRef.current?.click()}
-                          className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-300 group/upload ${dragActive
+                          className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-300 group/upload ${
+                            dragActive
                               ? "border-indigo-400 bg-indigo-500/10"
                               : "border-neutral-600 hover:border-indigo-500 hover:bg-neutral-800/30"
-                            }`}
+                          }`}
                         >
                           <div className="relative">
                             <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-neutral-800/50 flex items-center justify-center group-hover/upload:bg-indigo-500/20 transition-colors">
@@ -291,7 +302,7 @@ export function Sidebar({
       {!collapsed && (
         <div className="px-4 py-3 border-t border-neutral-800/50">
           <div className="flex items-center justify-between text-[10px] text-neutral-500">
-            <span className="font-medium">Ready to work</span>
+            <span className="font-medium">Select the tool</span>
             <div className="flex items-center space-x-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               <span>Online</span>

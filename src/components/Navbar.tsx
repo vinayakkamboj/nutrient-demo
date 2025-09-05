@@ -9,7 +9,7 @@ export function Navbar() {
     <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-neutral-200">
       {/* Left: Brand */}
       <div className="flex items-baseline gap-2 font-['Inter'] ml-6">
-        <span className="text-[22px] sm:text-2.5xl font-bold tracking-tight text-neutral-900">
+        <span className="text-[22px] sm:text-2xl font-bold tracking-tight text-neutral-900">
           Nutrient
         </span>
         <span className="text-[12px] sm:text-sm font-medium text-neutral-600">
