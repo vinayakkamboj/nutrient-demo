@@ -21,42 +21,45 @@ export function PDFViewer({
     if (!instance || !NutrientViewer || !modeToApply) return; // only apply if mode is explicitly set
 
     try {
-  switch (modeToApply) {
-    case "ANNOTATIONS":
-      instance.setViewState((vs: any) =>
-        vs
-          .set("interactionMode", null)
-          .set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS)
-      );
-      break;
+      switch (modeToApply) {
+        case "ANNOTATIONS":
+          instance.setViewState((vs: any) =>
+            vs
+              .set("interactionMode", null)
+              .set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS)
+          );
+          break;
 
-    case "FORMS":
-      instance.setViewState((vs: any) =>
-        vs
-          .set("interactionMode", NutrientViewer.InteractionMode.FORM_CREATOR)
-          .set("sidebarMode", null)
-      );
-      break;
+        case "FORMS":
+          // 1) Form filling (default): no change needed — keep interactionMode null.
+          // 2) Form design (move/resize fields): enable formDesignMode = true.
+          instance.setViewState((vs: any) =>
+            vs
+              .set("interactionMode", null) // leave tools off; users can still fill fields
+              .set("formDesignMode", true)  // requires Form Creator in your license
+              .set("sidebarMode", null)
+          );
+          break;
 
-    case "EDITOR":
-      // Requires content editor license in Standalone mode.
-      instance.setViewState((vs: any) =>
-        vs
-          .set("interactionMode", NutrientViewer.InteractionMode.CONTENT_EDITOR)
-          .set("sidebarMode", null)
-      );
-      break;
+        case "EDITOR":
+          // Requires content editor license in Standalone mode.
+          instance.setViewState((vs: any) =>
+            vs
+              .set("interactionMode", NutrientViewer.InteractionMode.CONTENT_EDITOR)
+              .set("sidebarMode", null)
+          );
+          break;
 
-    case "VIEWER":
-    default:
-      instance.setViewState((vs: any) =>
-        vs.set("interactionMode", null).set("sidebarMode", null)
-      );
-      break;
-  }
-} catch (err) {
-  console.error("applyModeToInstance error:", err);
-}
+        case "VIEWER":
+        default:
+          instance.setViewState((vs: any) =>
+            vs.set("interactionMode", null).set("sidebarMode", null)
+          );
+          break;
+      }
+    } catch (err) {
+      console.error("applyModeToInstance error:", err);
+    }
   };
 
   // Load / reload viewer
