@@ -1,16 +1,16 @@
 // PDFViewer.tsx
 import { useEffect, useRef } from "react";
 
-export type ViewerMode = "VIEWER" | "ANNOTATIONS" | "FORMS" | "EDITOR";
+export type ViewerMode = "VIEWER" | "ANNOTATIONS" | "FORMS" | "EDITOR" | null;
 
 interface PDFViewerProps {
-  mode: ViewerMode;
+  mode?: ViewerMode;
   documentUrl?: string;
-  onInstanceLoad?: (instance: any) => void; // 👈 new prop
+  onInstanceLoad?: (instance: any) => void;
 }
 
 export function PDFViewer({
-  mode,
+  mode = null,
   documentUrl = "https://www.nutrient.io/downloads/nutrient-web-demo.pdf",
   onInstanceLoad,
 }: PDFViewerProps) {
@@ -18,101 +18,132 @@ export function PDFViewer({
   const instanceRef = useRef<any>(null);
   const libRef = useRef<any>(null);
 
-  // Load viewer
+  // Helper to apply mode to a given instance + lib (NutrientViewer)
+  const applyModeToInstance = (modeToApply: ViewerMode, instance: any, NutrientViewer: any) => {
+    if (!instance || !NutrientViewer) return;
+
+    try {
+      switch (modeToApply) {
+        case "ANNOTATIONS":
+          // Show annotations sidebar (and leave interactionMode null)
+          instance.setViewState((vs: any) =>
+            vs.set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS).set("interactionMode", null)
+          );
+          break;
+
+        case "FORMS":
+          // Enter form-creator interaction mode
+          instance.setViewState((vs: any) =>
+            vs.set("interactionMode", NutrientViewer.InteractionMode.FORM_CREATOR).set("sidebarMode", null)
+          );
+          break;
+
+        case "EDITOR":
+          // Enter document editor mode
+          instance.setViewState((vs: any) =>
+            vs.set("interactionMode", NutrientViewer.InteractionMode.DOCUMENT_EDITOR).set("sidebarMode", null)
+          );
+          break;
+
+        case "VIEWER":
+        default:
+          // Default viewing UI
+          instance.setViewState((vs: any) => vs.set("interactionMode", null).set("sidebarMode", null));
+          break;
+      }
+
+      // small debug
+      // console.log("Applied mode", modeToApply);
+    } catch (err) {
+      console.error("applyModeToInstance error:", err);
+    }
+  };
+
+  // Load / reload viewer when documentUrl changes (or on mount)
   useEffect(() => {
     let disposed = false;
 
     (async () => {
-      const imported = await import("@nutrient-sdk/viewer");
-      const NutrientViewer: any = imported?.default ?? imported;
-      libRef.current = NutrientViewer;
-
-      const container = containerRef.current;
-      if (!container) return;
-
       try {
-        if (typeof NutrientViewer.unload === "function") {
-          NutrientViewer.unload(container);
-        } else if (instanceRef.current?.unload) {
-          instanceRef.current.unload(container);
-        }
-      } catch {}
+        const imported = await import("@nutrient-sdk/viewer");
+        const NutrientViewer: any = imported?.default ?? imported;
+        libRef.current = NutrientViewer;
 
-      const instance = await NutrientViewer.load({
-        container,
-        document: documentUrl,
-        baseUrl: `${window.location.protocol}//${window.location.host}/${
-          import.meta.env.PUBLIC_URL ?? ""
-        }`,
-      });
+        const container = containerRef.current;
+        if (!container) return;
 
-      if (disposed) {
+        // unload previous instance
         try {
-          if (typeof NutrientViewer.unload === "function") {
-            NutrientViewer.unload(container);
-          } else {
-            instance?.unload?.(container);
-          }
-        } catch {}
-        return;
-      }
+          NutrientViewer.unload(container);
+        } catch (error) {
+          // ignore first-load unload failures
+          console.warn("Previous unload error (likely first load):", error);
+        }
 
-      instanceRef.current = instance;
-      onInstanceLoad?.(instance); // 👈 give parent the instance
-    })().catch((e) => {
-      console.error("Failed to load Nutrient viewer:", e);
-    });
+        console.log("Nutrient: loading document:", documentUrl);
+
+        // load instance
+        const instance = await NutrientViewer.load({
+          container,
+          document: documentUrl,
+          baseUrl: `${window.location.protocol}//${window.location.host}/${import.meta.env.PUBLIC_URL ?? ""}`,
+          // optionally add initial options here (toolbar config, presets, licenseKey, etc.)
+        });
+
+        if (disposed) {
+          try {
+            NutrientViewer.unload(container);
+          } catch (e) {
+            console.warn("Unload after disposed:", e);
+          }
+          return;
+        }
+
+        instanceRef.current = instance;
+        onInstanceLoad?.(instance);
+
+        // HERE'S THE FIX: Apply the current mode *after* the new instance is available
+        if (mode) {
+          applyModeToInstance(mode, instance, NutrientViewer);
+        } else {
+          // default viewer state
+          applyModeToInstance("VIEWER", instance, NutrientViewer);
+        }
+
+        console.log("Nutrient: loaded and applied mode:", mode ?? "VIEWER");
+      } catch (error) {
+        console.error("Failed to load Nutrient viewer:", error);
+      }
+    })();
 
     return () => {
       disposed = true;
       const container = containerRef.current;
       const lib = libRef.current;
       try {
-        if (lib && typeof lib.unload === "function") {
+        if (lib?.unload) {
           lib.unload(container);
         } else if (instanceRef.current?.unload) {
           instanceRef.current.unload(container);
         }
-      } catch {}
+      } catch (error) {
+        console.warn("Error during cleanup:", error);
+      }
       instanceRef.current = null;
     };
-  }, [documentUrl, onInstanceLoad]);
+    // Re-run when documentUrl changes (and when initial mount)
+  }, [documentUrl, onInstanceLoad, mode]);
 
-  // React to mode changes
+  // When mode changes (and instance already exists), apply it
   useEffect(() => {
     const instance = instanceRef.current;
     const NutrientViewer = libRef.current;
-    if (!instance || !NutrientViewer) return;
-
-    switch (mode) {
-      case "ANNOTATIONS":
-        instance.setViewState((vs: any) =>
-          vs
-            .set("interactionMode", NutrientViewer.InteractionMode.INK)
-            .set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS)
-        );
-        break;
-      case "FORMS":
-        instance.setViewState((vs: any) =>
-          vs
-            .set("interactionMode", NutrientViewer.InteractionMode.FORM_CREATOR)
-            .set("sidebarMode", null)
-        );
-        break;
-      case "EDITOR":
-        instance.setViewState((vs: any) =>
-          vs
-            .set("interactionMode", NutrientViewer.InteractionMode.CONTENT_EDITOR)
-            .set("sidebarMode", null)
-        );
-        break;
-      case "VIEWER":
-      default:
-        instance.setViewState((vs: any) =>
-          vs.set("interactionMode", null).set("sidebarMode", null)
-        );
-        break;
+    if (!instance || !NutrientViewer) {
+      // instance not ready — the load-effect will apply the mode after load
+      return;
     }
+
+    applyModeToInstance(mode, instance, NutrientViewer);
   }, [mode]);
 
   return (
