@@ -22,9 +22,10 @@ export function Navbar() {
         <Button
           onClick={handleContactClick}
           size="sm"
-          className="text-xs px-2 py-1 h-7 whitespace-nowrap"
+          className="text-[10px] xs:text-xs px-1.5 xs:px-2 py-1 h-6 xs:h-7 whitespace-nowrap min-w-0"
         >
-          Contact Sales
+          <span className="hidden xs:inline">Contact Sales</span>
+          <span className="xs:hidden">Contact</span>
         </Button>
       </div>
     </header>
