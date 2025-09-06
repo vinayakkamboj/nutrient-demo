@@ -158,7 +158,6 @@ export function PDFViewer({
 
           // keep a limited toolbar suitable for viewing (use defaultToolbarItems filtered by allowed types)
           const allowedTypes = [
-            "sidebar-thumbnails",
             "pager",
             "pan",
             "zoom-out",            // zoom out
