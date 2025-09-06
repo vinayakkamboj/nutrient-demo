@@ -6,26 +6,26 @@ export function Navbar() {
   }
 
   return (
-    <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-neutral-200">
+    <header className="flex items-center justify-between h-10 px-2 sm:px-4 bg-white border-b border-neutral-200">
       {/* Left: Brand */}
-      <div className="flex items-baseline gap-2 font-['Inter'] ml-6">
-        <span className="text-[22px] sm:text-2xl font-bold tracking-tight text-neutral-900">
+      <div className="flex items-baseline gap-1 font-['Inter'] min-w-0 flex-1">
+        <span className="text-sm sm:text-lg font-bold tracking-tight text-neutral-900 truncate">
           Nutrient
         </span>
-        <span className="text-[12px] sm:text-sm font-medium text-neutral-600">
+        <span className="text-xs sm:text-xs font-medium text-neutral-600 truncate">
           WebSDK Demo
         </span>
       </div>
 
       {/* Right: CTA */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center ml-1">
         <Button
           onClick={handleContactClick}
-          className="rounded-md px-2 py-0.5 text-[10px] sm:text-[11px] font-medium bg-indigo-600 text-white hover:bg-indigo-700"
+          size="sm"
+          className="text-xs px-2 py-1 h-7 whitespace-nowrap"
         >
           Contact Sales
         </Button>
-        
       </div>
     </header>
   )

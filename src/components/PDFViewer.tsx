@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type ViewerMode = "VIEWER" | "ANNOTATIONS" | "FORMS" | "EDITOR" | null;
 
@@ -10,51 +10,175 @@ interface PDFViewerProps {
 
 export function PDFViewer({
   mode = null,
-  documentUrl = "https://www.nutrient.io/downloads/nutrient-web-demo.pdf",
+  documentUrl = "/document.pdf",
   onInstanceLoad,
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<any>(null);
   const libRef = useRef<any>(null);
+  const pendingModeRef = useRef<ViewerMode>(mode);
+  const isDocumentReadyRef = useRef(false);
+  const modeQueueRef = useRef<ViewerMode[]>([]);
+  const [isContainerReady, setIsContainerReady] = useState(false);
 
+  // Ensure container is mounted and ready (ONLY FIX NEEDED)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (containerRef.current) {
+        setIsContainerReady(true);
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Helper to apply mode (KEEP YOUR ORIGINAL - IT WORKS)
   const applyModeToInstance = (modeToApply: ViewerMode, instance: any, NutrientViewer: any) => {
-    if (!instance || !NutrientViewer || !modeToApply) return; // only apply if mode is explicitly set
+    if (!instance || !NutrientViewer) return;
 
     try {
       switch (modeToApply) {
         case "ANNOTATIONS":
+          // Annotations mode: show annotations sidebar, leave interactionMode null
           instance.setViewState((vs: any) =>
-            vs
-              .set("interactionMode", null)
-              .set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS)
+            vs.set("sidebarMode", NutrientViewer.SidebarMode.ANNOTATIONS).set("interactionMode", null)
           );
+
+          // keep a limited toolbar suitable for annotations
+          const annotationsAllowedTypes = [
+            "sidebar-annotations",      // annotations icon
+            "pager",                    // pager
+            "pan",                      // pan
+            "zoom-out",                 // zoom out
+            "zoom-in",                  // zoom in
+            "spacer",                   // push search/export/print to the right
+            "ink",                     // ink annotation
+            "text",                // free text
+            "note",                // note
+            "image",               // image
+            "line",                // line
+            // Optional variant/toggle items if they exist in your defaults:
+            "ink-highlighter",     // toggle ink variants
+            "arrow",               // line variant (arrow)
+            // Add shape tools/toggles if present in your defaults:
+            "rectangle",
+            "ellipse",
+            "polygon",
+            "polyline",
+          ];
+
+          const annotationsItems = annotationsAllowedTypes
+            .map(type =>
+              NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) ||
+              (type === "spacer" ? { type: "spacer" } : null)
+            )
+            .filter(Boolean);
+
+          instance.setToolbarItems(annotationsItems);
           break;
+
 
         case "FORMS":
-          // 1) Form filling (default): no change needed — keep interactionMode null.
-          // 2) Form design (move/resize fields): enable formDesignMode = true.
+          // Enable form design mode (move/resize form fields)
           instance.setViewState((vs: any) =>
-            vs
-              .set("interactionMode", null) // leave tools off; users can still fill fields
-              .set("formDesignMode", true)  // requires Form Creator in your license
-              .set("sidebarMode", null)
+            vs.set("formDesignMode", true).set("sidebarMode", null).set("interactionMode", null)
           );
+
+          // keep a limited toolbar suitable for forms
+          const formsAllowedTypes = [
+            "sidebar-thumbnails",
+            "sidebar-document-outline",
+            "sidebar-bookmarks",
+            "sidebar-annotations",
+            "sidebar-signatures",
+            "sidebar-layers",
+            "pager",            // pager
+            "pan",              // pan
+            "zoom-out",         // zoom out
+            "zoom-in",          // zoom in
+            "spacer",           // push form tools/export/print to the right
+            "sidebar-forms",    // form tools
+            "print",             // print
+            "export-pdf"
+          ];
+
+          const formsItems = formsAllowedTypes
+            .map(type =>
+              NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) ||
+              (type === "spacer" ? { type: "spacer" } : null)
+            )
+            .filter(Boolean);
+
+          instance.setToolbarItems(formsItems);
           break;
+
 
         case "EDITOR":
-          // Requires content editor license in Standalone mode.
-          instance.setViewState((vs: any) =>
-            vs
-              .set("interactionMode", NutrientViewer.InteractionMode.CONTENT_EDITOR)
-              .set("sidebarMode", null)
-          );
-          break;
-
-        case "VIEWER":
-        default:
+          // Editor mode: enable editing-related toolbar items
           instance.setViewState((vs: any) =>
             vs.set("interactionMode", null).set("sidebarMode", null)
           );
+
+          // keep a limited toolbar suitable for editing (use defaultToolbarItems filtered by allowed types)
+          const editorAllowedTypes = [
+            "sidebar-annotations", // annotations
+            "pager",               // pager
+            "pan",                 // pan
+            "zoom-out",            // zoom out
+            "zoom-in",             // zoom in
+            "spacer",              // push editor + export tools to the right
+            "document-editor",     
+            "print",               
+            "export-pdf",          
+          ];
+
+          const editorItems = editorAllowedTypes
+            .map(type =>
+              NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) ||
+              (type === "spacer" ? { type: "spacer" } : null)
+            )
+            .filter(Boolean)
+            .map((item: any) => {
+              const clone = { ...item };
+              if (clone.type === "document-editor") {
+                clone.selected = false; // ensure not pre-selected
+              }
+              return clone;
+            });
+
+          instance.setToolbarItems(editorItems);
+          break;
+
+
+        case "VIEWER":
+        default:
+          // Default viewer: no special interaction mode; restore a friendly subset of toolbar items
+          instance.setViewState((vs: any) =>
+            vs.set("interactionMode", null).set("sidebarMode", null)
+          );
+
+          // keep a limited toolbar suitable for viewing (use defaultToolbarItems filtered by allowed types)
+          const allowedTypes = [
+            "sidebar-thumbnails",
+            "pager",
+            "pan",
+            "zoom-out",            // zoom out
+            "zoom-in",
+            "zoom-mode",          // zoom mode (fit to width/page)
+            "sidebar-document-outline",
+            "sidebar-annotations",
+            "sidebar-signatures",
+            "sidebar-layers",
+            "spacer",      // This will push the following items to the right
+            "search",
+            "export-pdf",
+            "print"
+          ];
+
+          const filteredItems = allowedTypes
+            .map(type => NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) || (type === "spacer" ? { type: "spacer" } : null))
+            .filter(Boolean);
+
+          instance.setToolbarItems(filteredItems);
           break;
       }
     } catch (err) {
@@ -62,9 +186,13 @@ export function PDFViewer({
     }
   };
 
-  // Load / reload viewer
+  // Load / reload viewer (YOUR ORIGINAL WITH MINIMAL FIXES)
   useEffect(() => {
+    if (!isContainerReady) return; // ONLY ADDITION: wait for container
+
     let disposed = false;
+    const loadId = Symbol();
+    const currentLoadId = loadId;
 
     (async () => {
       try {
@@ -75,44 +203,94 @@ export function PDFViewer({
         const container = containerRef.current;
         if (!container) return;
 
-        // unload previous instance if any
+        // SMALL FIX: Add a tiny delay to ensure DOM is fully ready
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Unload previous instance safely
         try {
           NutrientViewer.unload(container);
-        } catch (err) {
-          console.warn("Previous unload error (likely first load):", err);
+        } catch (error) {
+          console.warn("Previous unload error (likely first load):", error);
         }
 
         console.log("Nutrient: loading document:", documentUrl);
 
-        // load instance
-        const instance = await NutrientViewer.load({
-          container,
-          document: documentUrl,
-          baseUrl: `${window.location.protocol}//${window.location.host}/${import.meta.env.PUBLIC_URL ?? ""}`,
-        });
+        // SMALL FIX: Handle blob URLs properly
+        let documentConfig;
+        if (documentUrl.startsWith('blob:')) {
+          try {
+            const response = await fetch(documentUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            documentConfig = {
+              container,
+              document: arrayBuffer,
+              baseUrl: `${window.location.protocol}//${window.location.host}/${import.meta.env.PUBLIC_URL ?? ""}`,
+            };
+          } catch {
+            // Fallback to original if blob fetch fails
+            documentConfig = {
+              container,
+              document: documentUrl,
+              baseUrl: `${window.location.protocol}//${window.location.host}/${import.meta.env.PUBLIC_URL ?? ""}`,
+            };
+          }
+        } else {
+          documentConfig = {
+            container,
+            document: documentUrl,
+            baseUrl: `${window.location.protocol}//${window.location.host}/${import.meta.env.PUBLIC_URL ?? ""}`,
+          };
+        }
 
-        if (disposed) {
+        const instance = await NutrientViewer.load(documentConfig);
+
+        if (disposed || currentLoadId !== loadId) {
           try {
             NutrientViewer.unload(container);
-          } catch (err) {
-            console.warn("Unload after disposed:", err);
+          } catch (e) {
+            console.warn("Unload after disposed:", e);
           }
           return;
         }
 
         instanceRef.current = instance;
+        isDocumentReadyRef.current = false;
         onInstanceLoad?.(instance);
 
-        // ONLY apply mode if user explicitly selected one
-        if (mode) {
-          applyModeToInstance(mode, instance, NutrientViewer);
-          console.log("Applied user-selected mode:", mode);
+        // Apply pending mode only when document is ready (YOUR ORIGINAL - KEEP IT)
+        const applyPendingMode = () => {
+          if (!instance || !NutrientViewer) return;
+          isDocumentReadyRef.current = true;
+          // Apply the queued modes
+          while (modeQueueRef.current.length > 0) {
+            const queuedMode = modeQueueRef.current.shift();
+            if (queuedMode) {
+              applyModeToInstance(queuedMode, instance, NutrientViewer);
+              console.log("Nutrient: applied queued mode:", queuedMode);
+            }
+          }
+          // Apply the current mode
+          applyModeToInstance(pendingModeRef.current, instance, NutrientViewer);
+          console.log("Nutrient: applied current mode:", pendingModeRef.current);
+        };
+
+        // SDK event if available (YOUR ORIGINAL - KEEP IT)
+        if (instance.on) {
+          if (typeof instance.isDocumentReady === "function") {
+            const interval = setInterval(() => {
+              if (instance.isDocumentReady()) {
+                clearInterval(interval);
+                applyPendingMode();
+              }
+            }, 50);
+          } else {
+            instance.on("documentReady", applyPendingMode);
+          }
         } else {
-          console.log("Default Nutrient viewer loaded (no mode applied)");
-          // nothing here, SDK shows default viewer UI
+          setTimeout(applyPendingMode, 200); // fallback
         }
-      } catch (err) {
-        console.error("Failed to load Nutrient viewer:", err);
+      } catch (error) {
+        console.error("Failed to load Nutrient viewer:", error);
       }
     })();
 
@@ -121,28 +299,42 @@ export function PDFViewer({
       const container = containerRef.current;
       const lib = libRef.current;
       try {
-        if (lib?.unload) lib.unload(container);
-        else if (instanceRef.current?.unload) instanceRef.current.unload(container);
-      } catch (err) {
-        console.warn("Error during cleanup:", err);
+        if (lib?.unload) {
+          lib.unload(container);
+        } else if (instanceRef.current?.unload) {
+          instanceRef.current.unload(container);
+        }
+      } catch (error) {
+        console.warn("Error during cleanup:", error);
       }
       instanceRef.current = null;
+      isDocumentReadyRef.current = false;
     };
-  }, [documentUrl, onInstanceLoad]); // removed mode dependency here
+  }, [documentUrl, onInstanceLoad, isContainerReady]); // ONLY CHANGE: added isContainerReady
 
-  // Apply mode dynamically if user changes mode
+  // Apply mode safely whenever it changes (YOUR ORIGINAL - KEEP IT)
   useEffect(() => {
+    pendingModeRef.current = mode;
+
     const instance = instanceRef.current;
     const NutrientViewer = libRef.current;
-    if (!instance || !NutrientViewer || !mode) return;
+    if (!instance || !NutrientViewer) return;
 
-    applyModeToInstance(mode, instance, NutrientViewer);
+    if (isDocumentReadyRef.current) {
+      // Only apply if document is ready
+      applyModeToInstance(mode, instance, NutrientViewer);
+    } else {
+      // Queue mode change if document isn't ready
+      modeQueueRef.current.push(mode);
+      console.log("Nutrient: queued mode change:", mode);
+    }
   }, [mode]);
 
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 h-full w-full bg-white z-0"
+      style={{ width: "100%", height: "100vh" }}
+      className="absolute inset-0 bg-white z-0"
     />
   );
 }

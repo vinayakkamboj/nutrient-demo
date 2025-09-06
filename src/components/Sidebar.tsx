@@ -42,14 +42,6 @@ const items: FeatureItem[] = [
     detailIcon: Eye,
   },
   {
-    name: "Editor",
-    icon: Edit3,
-    mode: "EDITOR",
-    description: "Edit PDF content, modify text, add images, and rearrange pages",
-    features: ["Edit Text", "Add Images", "Rearrange Pages", "Merge PDFs"],
-    detailIcon: Scissors,
-  },
-  {
     name: "Annotations",
     icon: PenLine,
     mode: "ANNOTATIONS",
@@ -65,7 +57,14 @@ const items: FeatureItem[] = [
     features: ["Fill Fields", "Digital Signature", "Validate Data", "Export Forms"],
     detailIcon: FileCheck,
   },
-  
+  {
+    name: "Editor",
+    icon: Edit3,
+    mode: "EDITOR",
+    description: "Edit PDF content, modify text, add images, and rearrange pages",
+    features: ["Edit Text", "Add Images", "Rearrange Pages", "Merge PDFs"],
+    detailIcon: Scissors,
+  },
 ];
 
 export function Sidebar({
@@ -78,12 +77,14 @@ export function Sidebar({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<ViewerMode | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null); // NEW
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       console.log("Sidebar: file chosen ->", file.name);
+      setUploadedFileName(file.name); // store file name
       onFileUpload(url);
     }
   };
@@ -107,6 +108,7 @@ export function Sidebar({
       const file = e.dataTransfer.files[0];
       const url = URL.createObjectURL(file);
       console.log("Sidebar: dropped file ->", file.name);
+      setUploadedFileName(file.name); // store file name
       onFileUpload(url);
     }
   };
@@ -121,7 +123,7 @@ export function Sidebar({
       className={
         "relative flex h-full flex-col transition-all duration-300 " +
         "bg-[#16181d] text-neutral-100 border-r border-neutral-800/70 " +
-        (collapsed ? "w-24" : "w-80")
+        (collapsed ? "w-16" : "w-72")
       }
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
@@ -144,26 +146,26 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Header - Always present but changes content based on collapsed state */}
-<div className="px-4 py-6 border-b border-neutral-800/50 flex items-center justify-center">
-  {collapsed ? (
-    <div className="flex items-center justify-center">
-      <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
-        <LayoutDashboard className="h-4 w-4 text-neutral-400" />
+      {/* Header */}
+      <div className="px-4 py-6 border-b border-neutral-800/50 flex items-center justify-center">
+        {collapsed ? (
+          <div className="flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
+              <LayoutDashboard className="h-4 w-4 text-neutral-400" />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-3 w-full">
+            <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
+              <LayoutDashboard className="h-4 w-4 text-neutral-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Tools</h2>
+              <p className="text-xs text-neutral-400">Select the feature</p>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  ) : (
-    <div className="flex items-center space-x-3 w-full">
-      <div className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
-        <LayoutDashboard className="h-4 w-4 text-neutral-400" />
-      </div>
-      <div>
-        <h2 className="text-lg font-semibold text-white">Tools</h2>
-        <p className="text-xs text-neutral-400">Select the feature</p>
-      </div>
-    </div>
-  )}
-</div>
 
       {/* Navigation items */}
       <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
@@ -191,27 +193,32 @@ export function Sidebar({
                 <div className="flex items-center">
                   <Icon
                     className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${
-                      isActive ? "text-neutral-300" : "text-neutral-400 group-hover:text-neutral-300"
+                      isActive
+                        ? "text-neutral-300"
+                        : "text-neutral-400 group-hover:text-neutral-300"
                     }`}
                   />
                   {!collapsed && <span className="ml-3 tracking-tight">{item.name}</span>}
                 </div>
 
                 {!collapsed && (
-                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(item.mode);
-                      }}
-                      className="p-1 hover:bg-neutral-700/50 rounded transition-colors"
-                    >
-                      <ChevronDown
-                        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown(item.mode);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
+                    }}
+                    className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700/50 rounded cursor-pointer select-none"
+                  >
+                    <ChevronDown
+                      className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    />
                   </div>
                 )}
 
@@ -254,6 +261,7 @@ export function Sidebar({
                       </div>
                     </div>
 
+                    {/* Upload area */}
                     {isActive && (
                       <div className="mt-4 animate-in slide-in-from-top-3 duration-500">
                         <div
@@ -269,9 +277,16 @@ export function Sidebar({
                               <Upload className="h-5 w-5 text-neutral-300 group-hover/upload:text-neutral-200 transition-colors" />
                             </div>
 
+                            {/* Show file name if uploaded */}
                             <p className="text-[12px] font-medium text-neutral-300 mb-1 group-hover/upload:text-white transition-colors">
-                              Drop files here or{" "}
-                              <span className="text-neutral-300 group-hover/upload:text-neutral-200">browse</span>
+                              {uploadedFileName
+                                ? `Uploaded: ${uploadedFileName}`
+                                : "Drop files here or "}
+                              {!uploadedFileName && (
+                                <span className="text-neutral-300 group-hover/upload:text-neutral-200">
+                                  browse
+                                </span>
+                              )}
                             </p>
 
                             <div className="flex items-center justify-center space-x-3 text-[10px] text-neutral-500">
