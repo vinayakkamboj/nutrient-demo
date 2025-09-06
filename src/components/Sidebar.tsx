@@ -1,16 +1,14 @@
 // Sidebar.tsx
 import { useRef, useState, useEffect } from "react";
 import {
-  FileText,
-  PenLine,
   ListChecks,
+  Edit,
   Edit3,
   Upload,
   ChevronDown,
   Eye,
   Highlighter,
   FileCheck,
-  Scissors,
   LayoutDashboard,
   X,
 } from "lucide-react";
@@ -36,7 +34,7 @@ interface FeatureItem {
 const items: FeatureItem[] = [
   {
     name: "Viewer",
-    icon: FileText,
+    icon: Eye,
     mode: "VIEWER",
     description: "Fast, accurate, and reliable document rendering in your browser. View PDFs, image files, and MS Office documents within a flexible and fully customizable UI.",
     features: ["Zoom & Pan", "Page Navigation", "Search Text", "Bookmarks"],
@@ -44,7 +42,7 @@ const items: FeatureItem[] = [
   },
   {
     name: "Annotations",
-    icon: PenLine,
+    icon: Highlighter,
     mode: "ANNOTATIONS",
     description: "A plug-and-play PDF annotation library with more than 15 tools that lets you highlight, draw, and add shapes, texts, notes, comments, and more.",
     features: ["Annotation", "Draw", "Draw Shapes", "Sticky Notes"],
@@ -60,11 +58,11 @@ const items: FeatureItem[] = [
   },
   {
     name: "Editor",
-    icon: Edit3,
+    icon: Edit,
     mode: "EDITOR",
     description: "Quickly deploy PDF editing features in your application. Edit PDF text and manipulate pages directly in the browser: add, merge, rotate, reorder, and delete document pages.",
     features: ["Annotations",  "Rearrange Pages"],
-    detailIcon: Scissors,
+    detailIcon: Edit3,
   },
 ];
 
