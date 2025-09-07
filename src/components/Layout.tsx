@@ -2,7 +2,9 @@
 import { useState, useRef, useLayoutEffect } from "react";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
-import { PDFViewer, type ViewerMode } from "./PDFViewer";
+import { PDFViewer } from "./PDFViewer";
+import type { ViewerMode } from "./PDFViewerUtils";
+
 
 export function Layout() {
   const [collapsed, setCollapsed] = useState(false);
