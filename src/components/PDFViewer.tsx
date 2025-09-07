@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ToolType } from "./Sidebar";
 
 export type ViewerMode = "VIEWER" | "ANNOTATIONS" | "FORMS" | "EDITOR" | null;
 
@@ -6,12 +7,14 @@ interface PDFViewerProps {
   mode?: ViewerMode;
   documentUrl?: string;
   onInstanceLoad?: (instance: any) => void;
+  onToolActivation?: (toolType: ToolType, toolName: string) => void;
 }
 
 export function PDFViewer({
   mode = null,
   documentUrl = "/document.pdf",
   onInstanceLoad,
+  onToolActivation,
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<any>(null);
@@ -19,6 +22,7 @@ export function PDFViewer({
   const pendingModeRef = useRef<ViewerMode>(mode);
   const isDocumentReadyRef = useRef(false);
   const modeQueueRef = useRef<ViewerMode[]>([]);
+  const toolActivationQueueRef = useRef<Array<{toolType: ToolType, toolName: string}>>([]);
   const [isContainerReady, setIsContainerReady] = useState(false);
 
   // small mount delay so Tailwind / layout can settle (keep this)
@@ -31,7 +35,216 @@ export function PDFViewer({
     return () => clearTimeout(timer);
   }, []);
 
-  // Helper to apply mode (unchanged)
+  // Helper to activate specific tools based on toolType
+  const activateTool = (toolType: ToolType, toolName: string, instance: any, NutrientViewer: any) => {
+    if (!instance || !NutrientViewer) return;
+
+    try {
+      console.log("PDFViewer: activating tool ->", toolType, toolName);
+
+      // Tool activation mapping based on Nutrient Web SDK interaction modes
+      const toolActivationMap: Record<ToolType, () => void> = {
+        // VIEWER MODE TOOLS
+        "office-documents": () => {
+          // Handle office document viewing - no specific interaction mode needed
+          console.log("Office documents viewing enabled");
+        },
+        "magazine-view": () => {
+          // Set spread mode for magazine-style viewing
+          instance.setViewState((vs: any) => 
+            vs.set("spreadMode", NutrientViewer.SpreadMode.DOUBLE_PAGE)
+          );
+        },
+        "search": () => {
+          // Activate search functionality
+          instance.setViewState((vs: any) => 
+            vs.set("sidebarMode", NutrientViewer.SidebarMode.DOCUMENT_OUTLINE)
+              .set("interactionMode", null)
+          );
+        },
+        "upload": () => {
+          // Upload is handled by sidebar, no viewer action needed
+          console.log("Upload triggered from toolbar");
+        },
+
+        // ANNOTATION MODE TOOLS
+        "image": () => {
+          // Activate image annotation mode
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.IMAGE)
+          );
+          // Also ensure the image toolbar item is selected
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "image" || item.type === "image-annotation"
+            }))
+          );
+        },
+        "stamp": () => {
+          // Activate stamp annotation mode
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.STAMP_PICKER)
+          );
+          // Select stamp toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "stamp" || item.type === "stamp-picker"
+            }))
+          );
+        },
+        "rectangle": () => {
+          // Activate rectangle annotation mode
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_RECTANGLE)
+          );
+          // Select rectangle toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "rectangle" || item.type === "shape-rectangle"
+            }))
+          );
+        },
+        "ink-highlighter": () => {
+          // Activate highlighter annotation mode
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.INK)
+          );
+          // Select ink highlighter toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "ink-highlighter" || item.type === "highlighter"
+            }))
+          );
+        },
+
+        // FORM MODE TOOLS
+        "form-text": () => {
+          // Activate text form field creation
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.FORM_TEXT)
+              .set("formDesignMode", true)
+          );
+          // Select form text toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "form-text" || item.type === "text-form-field"
+            }))
+          );
+        },
+        "form-signature": () => {
+          // Activate signature form field creation
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.SIGNATURE)
+              .set("formDesignMode", true)
+          );
+          // Select signature toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "signature" || item.type === "form-signature"
+            }))
+          );
+        },
+        "forms": () => {
+          // Toggle forms sidebar and enable form design mode
+          instance.setViewState((vs: any) => 
+            vs.set("sidebarMode", NutrientViewer.SidebarMode.FORMS)
+              .set("formDesignMode", true)
+              .set("interactionMode", null)
+          );
+        },
+
+        // EDITOR MODE TOOLS
+        "page-manipulation": () => {
+  // Open thumbnails sidebar for page management
+  instance.setViewState((vs: any) =>
+    vs.set("sidebarMode", NutrientViewer.SidebarMode.THUMBNAILS)
+      .set("interactionMode", null)
+  );
+
+  // Ensure page manipulation features are enabled if SDK supports it
+  try {
+    if (instance.setPageManipulationMode) {
+      instance.setPageManipulationMode(true);
+    }
+  } catch (e) {
+    console.warn("Page manipulation mode not available:", e);
+  }
+
+  // Select the correct toolbar item
+  instance.setToolbarItems((items: any[]) =>
+    items.map((item: any) => ({
+      ...item,
+      selected: item.type === "document-editor",
+    }))
+  );
+},
+
+"crop-pages": () => {
+  // Reset interaction mode (don’t rely on InteractionMode.CROP)
+  instance.setViewState((vs: any) =>
+    vs.set("interactionMode", null)
+  );
+
+  // Select the proper Nutrient crop toolbar item
+  instance.setToolbarItems((items: any[]) =>
+    items.map((item: any) => ({
+      ...item,
+      selected: item.type === "document-crop",
+    }))
+  );
+},
+
+"content-editor": () => {
+  // Reset interaction mode (don’t force DOCUMENT_EDITOR)
+  instance.setViewState((vs: any) =>
+    vs.set("interactionMode", null)
+  );
+
+  // Select the proper content editor toolbar item
+  instance.setToolbarItems((items: any[]) =>
+    items.map((item: any) => ({
+      ...item,
+      selected: item.type === "content-editor",
+    }))
+  );
+},
+
+        "edit-text": () => {
+          // Activate text editing mode
+          instance.setViewState((vs: any) => 
+            vs.set("interactionMode", NutrientViewer.InteractionMode.TEXT)
+          );
+          // Select text editing toolbar item
+          instance.setToolbarItems((items: any[]) => 
+            items.map((item: any) => ({
+              ...item,
+              selected: item.type === "text" || item.type === "edit-text"
+            }))
+          );
+        },
+      };
+
+      // Execute the tool activation
+      const activationFn = toolActivationMap[toolType];
+      if (activationFn) {
+        activationFn();
+        console.log(`PDFViewer: ${toolName} (${toolType}) activated successfully`);
+      } else {
+        console.warn(`PDFViewer: No activation handler found for tool type: ${toolType}`);
+      }
+
+    } catch (err) {
+      console.error("PDFViewer: Tool activation error:", err);
+    }
+  };
+
+  // Helper to apply mode (enhanced with tool activation support)
   const applyModeToInstance = (modeToApply: ViewerMode, instance: any, NutrientViewer: any) => {
     if (!instance || !NutrientViewer) return;
 
@@ -45,7 +258,7 @@ export function PDFViewer({
           const annotationsAllowedTypes = [
             "sidebar-annotations", "pager", "pan", "zoom-out", "zoom-in", "spacer",
             "ink", "text", "note", "image", "line", "ink-highlighter", "arrow",
-            "rectangle", "ellipse", "polygon", "polyline",
+            "rectangle", "ellipse", "polygon", "polyline", "stamp", "stamp-picker",
           ];
 
           const annotationsItems = annotationsAllowedTypes
@@ -66,7 +279,8 @@ export function PDFViewer({
           const formsAllowedTypes = [
             "sidebar-thumbnails", "sidebar-document-outline", "sidebar-annotations",
             "sidebar-signatures", "sidebar-layers", "pager", "pan", "zoom-out", "zoom-in",
-            "spacer", "sidebar-forms", "print", "export-pdf"
+            "spacer", "sidebar-forms", "print", "export-pdf", "form-text", "form-signature",
+            "text-form-field", "signature"
           ];
 
           const formsItems = formsAllowedTypes
@@ -80,41 +294,56 @@ export function PDFViewer({
           break;
 
         case "EDITOR":
-          instance.setViewState((vs: any) =>
-            vs.set("interactionMode", null).set("sidebarMode", null)
-          );
+  instance.setViewState((vs: any) =>
+    vs.set("interactionMode", null).set("sidebarMode", null)
+  );
 
-          const editorAllowedTypes = [
-            "sidebar-annotations", "pager", "pan", "zoom-out", "zoom-in", "spacer",
-            "document-editor", "print", "export-pdf",
-          ];
+  // Explicitly allow only the editor-related tools we want
+  const editorAllowedTypes = [
+    "sidebar-annotations",
+    "pager",
+    "pan",
+    "zoom-out",
+    "zoom-in",
+    "spacer",
+    "content-editor",   // ✅ Content Editor
+    "document-editor",  // ✅ Page Manipulation / Document Editor
+    "document-crop",    // ✅ Crop Tool
+    "print",
+    "export-pdf",
+  ];
 
-          const editorItems = editorAllowedTypes
-            .map(type =>
-              NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) ||
-              (type === "spacer" ? { type: "spacer" } : null)
-            )
-            .filter(Boolean)
-            .map((item: any) => {
-              const clone = { ...item };
-              if (clone.type === "document-editor") {
-                clone.selected = false;
-              }
-              return clone;
-            });
+  const editorItems = editorAllowedTypes
+    .map((type) =>
+      NutrientViewer.defaultToolbarItems.find((item: any) => item.type === type) ||
+      (type === "spacer" ? { type: "spacer" } : null)
+    )
+    .filter(Boolean)
+    .map((item: any) => {
+      const clone = { ...item };
+      // make sure none are auto-selected on load
+      if (
+        clone.type === "document-editor" ||
+        clone.type === "content-editor" ||
+        clone.type === "document-crop"
+      ) {
+        clone.selected = false;
+      }
+      return clone;
+    });
 
-          instance.setToolbarItems(editorItems);
-          break;
+  instance.setToolbarItems(editorItems);
+  break;
+
 
         case "VIEWER":
         default:
-          // important: do NOT force sidebarMode to null if toolbar contains sidebar items
           instance.setViewState((vs: any) =>
             vs.set("interactionMode", null)
           );
 
           const allowedTypes = [
-             "sidebar-document-outline", "sidebar-annotations",
+            "sidebar-document-outline", "sidebar-annotations",
             "sidebar-signatures", "sidebar-layers", "pager", "pan", "zoom-out", "zoom-in",
             "zoom-mode", "spacer", "search", "export-pdf", "print"
           ];
@@ -258,10 +487,12 @@ export function PDFViewer({
           console.warn("Failed to apply defensive viewer styles/listeners:", err);
         }
 
-        // Apply pending mode only when document is ready
-        const applyPendingMode = () => {
+        // Apply pending mode and tools only when document is ready
+        const applyPendingModeAndTools = () => {
           if (!instance || !NutrientViewer) return;
           isDocumentReadyRef.current = true;
+          
+          // Apply queued mode changes
           while (modeQueueRef.current.length > 0) {
             const queuedMode = modeQueueRef.current.shift();
             if (queuedMode) {
@@ -269,8 +500,19 @@ export function PDFViewer({
               console.log("Nutrient: applied queued mode:", queuedMode);
             }
           }
+          
+          // Apply current mode
           applyModeToInstance(pendingModeRef.current, instance, NutrientViewer);
           console.log("Nutrient: applied current mode:", pendingModeRef.current);
+
+          // Apply queued tool activations
+          while (toolActivationQueueRef.current.length > 0) {
+            const queuedTool = toolActivationQueueRef.current.shift();
+            if (queuedTool) {
+              activateTool(queuedTool.toolType, queuedTool.toolName, instance, NutrientViewer);
+              console.log("Nutrient: applied queued tool activation:", queuedTool);
+            }
+          }
         };
 
         if (instance.on) {
@@ -278,14 +520,14 @@ export function PDFViewer({
             const interval = setInterval(() => {
               if (instance.isDocumentReady()) {
                 clearInterval(interval);
-                applyPendingMode();
+                applyPendingModeAndTools();
               }
             }, 50);
           } else {
-            instance.on("documentReady", applyPendingMode);
+            instance.on("documentReady", applyPendingModeAndTools);
           }
         } else {
-          setTimeout(applyPendingMode, 200); // fallback
+          setTimeout(applyPendingModeAndTools, 200); // fallback
         }
       } catch (error) {
         console.error("Failed to load Nutrient viewer:", error);
@@ -324,7 +566,7 @@ export function PDFViewer({
     };
   }, [documentUrl, onInstanceLoad, isContainerReady]);
 
-  // Apply mode safely whenever it changes (unchanged)
+  // Apply mode safely whenever it changes
   useEffect(() => {
     pendingModeRef.current = mode;
 
@@ -339,6 +581,39 @@ export function PDFViewer({
       console.log("Nutrient: queued mode change:", mode);
     }
   }, [mode]);
+
+  // Handle tool activation from sidebar
+  useEffect(() => {
+    const handleToolActivation = (toolType: ToolType, toolName: string) => {
+      const instance = instanceRef.current;
+      const NutrientViewer = libRef.current;
+      
+      if (!instance || !NutrientViewer) {
+        // Queue tool activation if viewer isn't ready yet
+        toolActivationQueueRef.current.push({ toolType, toolName });
+        console.log("PDFViewer: queued tool activation:", toolType, toolName);
+        return;
+      }
+
+      if (isDocumentReadyRef.current) {
+        activateTool(toolType, toolName, instance, NutrientViewer);
+      } else {
+        // Queue tool activation if document isn't ready yet
+        toolActivationQueueRef.current.push({ toolType, toolName });
+        console.log("PDFViewer: queued tool activation (doc not ready):", toolType, toolName);
+      }
+    };
+
+    if (onToolActivation) {
+      // Set up tool activation handler
+      (globalThis as any).__pdfViewerToolActivation = handleToolActivation;
+    }
+
+    return () => {
+      // Cleanup
+      delete (globalThis as any).__pdfViewerToolActivation;
+    };
+  }, [onToolActivation]);
 
   return (
     <div

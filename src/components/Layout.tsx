@@ -39,8 +39,6 @@ export function Layout() {
 
     const measure = () => {
       try {
-        // If Navbar is fixed, the wrapper's bounding box may be 0.
-        // So measure the actual rendered navbar element (first child).
         const targetEl = (wrapper.firstElementChild as HTMLElement) ?? wrapper;
         if (!targetEl) {
           setNavHeight(0);
@@ -48,28 +46,21 @@ export function Layout() {
         }
         const rect = targetEl.getBoundingClientRect();
         setNavHeight(Math.max(0, Math.ceil(rect.height)));
-      } catch (e) {
-        // fallback
+      } catch {
         setNavHeight(0);
       }
     };
 
-    // initial measure after paint
     requestAnimationFrame(measure);
 
-    // use ResizeObserver to watch for navbar size changes (works if navbar is fixed / dynamic)
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(() => measure());
-      // observe both wrapper and the child (defensive)
       try {
         ro.observe(wrapper);
         if (wrapper.firstElementChild) ro.observe(wrapper.firstElementChild);
-      } catch (e) {
-        // ignore observe failures
-      }
+      } catch {}
     } else {
-      // fallback: window resize
       window.addEventListener("resize", measure);
     }
 
@@ -84,7 +75,7 @@ export function Layout() {
 
   return (
     <div className="flex h-screen w-screen flex-col bg-neutral-100">
-      {/* wrapper around Navbar so we can measure the real rendered navbar element */}
+      {/* Navbar wrapper so we can measure height */}
       <div ref={navWrapperRef} style={{ zIndex: 50 }}>
         <Navbar />
       </div>
@@ -96,14 +87,25 @@ export function Layout() {
           onSelectMode={(m) => setMode(m)}
           activeMode={mode}
           onFileUpload={handleFileUpload}
+          onToolAction={(toolType, toolName) => {
+            // Forward tool activations into PDFViewer
+            if ((globalThis as any).__pdfViewerToolActivation) {
+              (globalThis as any).__pdfViewerToolActivation(toolType, toolName);
+            }
+          }}
         />
 
-        {/* apply paddingTop equal to navbar height so the viewer and toolbar sit below it */}
         <main
           className="relative flex-1 overflow-hidden"
           style={{ paddingTop: navHeight }}
         >
-          <PDFViewer mode={mode} documentUrl={documentUrl} />
+          <PDFViewer
+            mode={mode}
+            documentUrl={documentUrl}
+            onToolActivation={(toolType, toolName) => {
+              console.log("Tool activation received in PDFViewer:", toolType, toolName);
+            }}
+          />
         </main>
       </div>
     </div>

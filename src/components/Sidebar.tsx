@@ -11,8 +11,43 @@ import {
   FileCheck,
   LayoutDashboard,
   X,
+  Image,
+  Stamp,
+  Shapes,
+  Type,
+  PenTool,
+  Crop,
+  FileText,
 } from "lucide-react";
 import type { ViewerMode } from "./PDFViewer";
+
+// Export tool types for PDFViewer integration
+export type ToolType =
+  | "office-documents"
+  | "magazine-view"
+  | "search"
+  | "upload"
+  | "image"
+  | "stamp"
+  | "rectangle"
+  | "ink-highlighter"
+  | "form-text"
+  | "form-signature"
+  | "forms"
+  | "page-manipulation"
+  | "crop-pages"
+  | "content-editor"
+  | "edit-text";
+
+export type ToolAction = "toggle" | "activate" | "upload";
+
+export interface ToolConfig {
+  name: string;
+  icon: any;
+  description: string;
+  toolType: ToolType;
+  action: ToolAction;
+}
 
 interface SidebarProps {
   collapsed: boolean;
@@ -20,6 +55,7 @@ interface SidebarProps {
   onSelectMode: (mode: ViewerMode) => void;
   activeMode: ViewerMode;
   onFileUpload: (url: string) => void;
+  onToolAction?: (toolType: ToolType, toolName: string) => void;
 }
 
 interface FeatureItem {
@@ -27,7 +63,7 @@ interface FeatureItem {
   icon: any;
   mode: ViewerMode;
   description: string;
-  features: string[];
+  tools: ToolConfig[];
   detailIcon: any;
 }
 
@@ -37,7 +73,11 @@ const items: FeatureItem[] = [
     icon: Eye,
     mode: "VIEWER",
     description: "Fast, accurate, and reliable document rendering in your browser. View PDFs, image files, and MS Office documents within a flexible and fully customizable UI.",
-    features: ["Zoom & Pan", "Page Navigation", "Search Text", "Bookmarks"],
+    tools: [
+      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
+      { name: "Office Documents", icon: FileText, description: "View Office files", toolType: "office-documents", action: "toggle" },
+      { name: "Search Text", icon: Eye, description: "Find content", toolType: "search", action: "toggle" },
+    ],
     detailIcon: Eye,
   },
   {
@@ -45,7 +85,13 @@ const items: FeatureItem[] = [
     icon: Highlighter,
     mode: "ANNOTATIONS",
     description: "A plug-and-play PDF annotation library with more than 15 tools that lets you highlight, draw, and add shapes, texts, notes, comments, and more.",
-    features: ["Annotation", "Draw", "Draw Shapes", "Sticky Notes"],
+    tools: [
+      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
+      { name: "Add Image", icon: Image, description: "Insert images into document", toolType: "image", action: "activate" },
+      { name: "Add Stamp", icon: Stamp, description: "Add custom stamps", toolType: "stamp", action: "activate" },
+      { name: "Add Shapes", icon: Shapes, description: "Draw geometric shapes", toolType: "rectangle", action: "activate" },
+      { name: "Highlight Text", icon: Highlighter, description: "Highlight content", toolType: "ink-highlighter", action: "activate" },
+    ],
     detailIcon: Highlighter,
   },
   {
@@ -53,7 +99,11 @@ const items: FeatureItem[] = [
     icon: ListChecks,
     mode: "FORMS",
     description: "Easily create, view, and fill PDF forms. Capture data on your server, or flatten it into a PDF. Supports checkboxes, combo boxes, list boxes, and more.",
-    features: ["Fill Fields", "Validate Data", "Export Forms"],
+    tools: [
+      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
+      { name: "Text Field", icon: Type, description: "Add text input fields", toolType: "form-text", action: "activate" },
+      { name: "Signature Field", icon: PenTool, description: "Add signature areas", toolType: "form-signature", action: "activate" },
+    ],
     detailIcon: FileCheck,
   },
   {
@@ -61,7 +111,13 @@ const items: FeatureItem[] = [
     icon: Edit,
     mode: "EDITOR",
     description: "Quickly deploy PDF editing features in your application. Edit PDF text and manipulate pages directly in the browser: add, merge, rotate, reorder, and delete document pages.",
-    features: ["Annotations",  "Rearrange Pages"],
+    tools: [
+      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
+      { name: "Page Manipulation", icon: LayoutDashboard, description: "Reorder and manage pages", toolType: "page-manipulation", action: "activate" },
+      { name: "Crop Tool", icon: Crop, description: "Crop page content", toolType: "crop-pages", action: "activate" },
+      { name: "Content Editor", icon: Edit3, description: "Edit text and content", toolType: "content-editor", action: "activate" },
+      { name: "Text Editing", icon: Type, description: "Modify document text", toolType: "edit-text", action: "activate" },
+    ],
     detailIcon: Edit3,
   },
 ];
@@ -72,9 +128,11 @@ export function Sidebar({
   onSelectMode,
   activeMode,
   onFileUpload,
+  onToolAction,
 }: SidebarProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<ViewerMode | null>(null);
+  const [expandedTool, setExpandedTool] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -84,7 +142,7 @@ export function Sidebar({
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -138,6 +196,20 @@ export function Sidebar({
   const toggleDropdown = (mode: ViewerMode) => {
     if (collapsed) return;
     setExpandedDropdown((prev) => (prev === mode ? null : mode));
+    setExpandedTool(null); // Close any expanded tool when switching modes
+  };
+
+  const toggleTool = (toolId: string) => {
+    if (collapsed) return;
+    setExpandedTool((prev) => (prev === toolId ? null : toolId));
+  };
+
+  const handleToolClick = (tool: ToolConfig) => {
+    if (tool.action === "upload") {
+      fileInputRef.current?.click();
+    } else {
+      onToolAction?.(tool.toolType, tool.name);
+    }
   };
 
   // Mobile overlay when expanded
@@ -147,7 +219,7 @@ export function Sidebar({
     <>
       {/* Mobile backdrop overlay */}
       {mobileOverlay && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onToggle}
         />
@@ -157,11 +229,11 @@ export function Sidebar({
         className={
           "relative flex h-full flex-col transition-all duration-300 z-50 " +
           "bg-[#16181d] text-neutral-100 border-r border-neutral-800/70 " +
-          (collapsed 
-            ? "w-12 md:w-16" 
-            : isMobile 
-              ? "w-64 fixed left-0 top-0 bottom-0 shadow-2xl" 
-              : "w-72"
+          (collapsed
+            ? "w-12 md:w-16"
+            : isMobile
+              ? "w-80 fixed left-0 top-0 bottom-0 shadow-2xl"
+              : "w-80"
           )
         }
         onDragEnter={handleDrag}
@@ -169,6 +241,15 @@ export function Sidebar({
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
         {/* Mobile close button */}
         {!collapsed && isMobile && (
           <div className="absolute top-4 right-4 z-10">
@@ -187,15 +268,15 @@ export function Sidebar({
           className={
             isMobile
               ? "absolute top-1/2 -right-3 -translate-y-1/2 cursor-pointer z-45 " +
-                "flex items-center justify-center h-10 w-3 " +
-                "bg-[#181a1e] hover:bg-[#22252b] " +
-                "rounded-r-md transition-all duration-200 border border-neutral-800 " +
-                "group shadow-lg"
+              "flex items-center justify-center h-10 w-3 " +
+              "bg-[#181a1e] hover:bg-[#22252b] " +
+              "rounded-r-md transition-all duration-200 border border-neutral-800 " +
+              "group shadow-lg"
               : "absolute top-1/2 -right-4 -translate-y-1/2 cursor-pointer z-45 " +
-                "flex items-center justify-center h-14 w-4 " +
-                "bg-[#181a1e] hover:bg-[#22252b] " +
-                "rounded-r-md transition-all duration-200 border border-neutral-800 " +
-                "group shadow-lg"
+              "flex items-center justify-center h-14 w-4 " +
+              "bg-[#181a1e] hover:bg-[#22252b] " +
+              "rounded-r-md transition-all duration-200 border border-neutral-800 " +
+              "group shadow-lg"
           }
         >
           <div className="flex flex-col items-center space-y-1">
@@ -235,11 +316,12 @@ export function Sidebar({
 
             return (
               <div key={item.name} className="relative">
+                {/* Main Tab Button */}
                 <button
                   title={collapsed ? item.name : undefined}
                   onClick={() => {
                     onSelectMode(item.mode);
-                    if (!collapsed && !isMobile) setExpandedDropdown(item.mode);
+                    if (!collapsed) toggleDropdown(item.mode);
                   }}
                   className={
                     "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
@@ -251,16 +333,15 @@ export function Sidebar({
                 >
                   <div className="flex items-center">
                     <Icon
-                      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${
-                        isActive
+                      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${isActive
                           ? "text-neutral-300"
                           : "text-neutral-400 group-hover:text-neutral-300"
-                      }`}
+                        }`}
                     />
                     {!collapsed && <span className="ml-2 md:ml-3 tracking-tight">{item.name}</span>}
                   </div>
 
-                  {!collapsed && !isMobile && (
+                  {!collapsed && (
                     <div
                       role="button"
                       tabIndex={0}
@@ -274,22 +355,20 @@ export function Sidebar({
                       className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700/50 rounded cursor-pointer select-none"
                     >
                       <ChevronDown
-                        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
+                        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
+                          }`}
                       />
                     </div>
                   )}
 
                   <span
-                    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${
-                      isActive ? "opacity-100" : "opacity-0"
-                    }`}
+                    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0"
+                      }`}
                   />
                 </button>
 
-                {/* Dropdown content - hidden on mobile */}
-                {isExpanded && !collapsed && !isMobile && (
+                {/* Tools Dropdown */}
+                {isExpanded && !collapsed && (
                   <div className="mt-2 mx-2 animate-in slide-in-from-top-2 duration-300">
                     <div className="bg-[#1a1d23] rounded-lg border border-neutral-700/50 shadow-xl overflow-hidden">
                       <div className="p-4 border-b border-neutral-700/30">
@@ -304,66 +383,77 @@ export function Sidebar({
                         </div>
                       </div>
 
-                      <div className="p-4">
-                        <h5 className="text-xs font-medium text-neutral-300 mb-3 uppercase tracking-wider">
-                          Features
-                        </h5>
-                        <div className="space-y-2">
-                          {item.features.map((feature, idx) => (
-                            <div key={idx} className="flex items-center space-x-3 group/feature">
-                              <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 group-hover/feature:bg-neutral-300 transition-colors" />
-                              <span className="text-xs text-neutral-400 group-hover/feature:text-neutral-300 transition-colors">
-                                {feature}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      {/* Tools List - Line by Line */}
+                      <div className="p-2">
+                        {item.tools.map((tool, idx) => {
+                          const toolId = `${item.mode}-${idx}`;
+                          const isToolExpanded = expandedTool === toolId;
+                          const ToolIcon = tool.icon;
 
-                      {/* Upload area */}
-                      {isActive && (
-                        <div className="mt-4 animate-in slide-in-from-top-3 duration-500">
-                          <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`relative border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all duration-300 group/upload ${
-                              dragActive
-                                ? "border-neutral-400 bg-neutral-700/20"
-                                : "border-neutral-600 hover:border-neutral-400 hover:bg-neutral-800/30"
-                            }`}
-                          >
-                            <div className="relative">
-                              <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-neutral-800/50 flex items-center justify-center group-hover/upload:bg-neutral-700/50 transition-colors">
-                                <Upload className="h-5 w-5 text-neutral-300 group-hover/upload:text-neutral-200 transition-colors" />
-                              </div>
-
-                              <p className="text-[12px] font-medium text-neutral-300 mb-1 group-hover/upload:text-white transition-colors">
-                                {uploadedFileName
-                                  ? `Uploaded: ${uploadedFileName}`
-                                  : "Drop files here or "}
-                                {!uploadedFileName && (
-                                  <span className="text-neutral-300 group-hover/upload:text-neutral-200">
-                                    browse
+                          return (
+                            <div key={idx} className="mb-1">
+                              {/* Tool Button */}
+                              <button
+                                onClick={() => {
+                                  if (tool.action === "upload") {
+                                    handleToolClick(tool);
+                                  } else {
+                                    toggleTool(toolId);
+                                  }
+                                }}
+                                className="group w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-all duration-200 bg-neutral-800/30 hover:bg-neutral-700/50 border border-neutral-700/30 hover:border-neutral-600/50"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <ToolIcon className="w-4 h-4 text-neutral-300 group-hover:text-white transition-colors" />
+                                  <span className="text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">
+                                    {tool.name}
                                   </span>
+                                </div>
+
+                                {tool.action !== "upload" && (
+                                  <ChevronDown
+                                    className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${isToolExpanded ? "rotate-180" : ""
+                                      }`}
+                                  />
                                 )}
-                              </p>
+                              </button>
 
-                              <div className="flex items-center justify-center space-x-3 text-[10px] text-neutral-500">
-                                <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PDF</span>
-                                <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">JPG</span>
-                                <span className="px-2 py-1 bg-neutral-800/50 rounded text-neutral-400">PNG</span>
-                              </div>
+                              {/* Tool Details Dropdown */}
+                              {isToolExpanded && tool.action !== "upload" && (
+                                <div className="mt-1 ml-4 animate-in slide-in-from-top-1 duration-200">
+                                  <div className="bg-neutral-900/50 rounded-lg border border-neutral-700/30 p-3">
+                                    <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                                      {tool.description}
+                                    </p>
+                                    <div className="flex flex-col space-y-2">
+                                      {/* Upload Image Option - only for certain tools */}
+                                      {["image", "stamp", "rectangle"].includes(tool.toolType) && (
+                                        <button
+                                          onClick={() => fileInputRef.current?.click()}
+                                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-neutral-800/50 hover:bg-neutral-700/70 border border-neutral-600/30 hover:border-neutral-500/50 transition-all duration-200 text-left"
+                                        >
+                                          <Upload className="w-3 h-3 text-neutral-300" />
+                                          <span className="text-xs text-neutral-300">Upload Image</span>
+                                        </button>
+                                      )}
+
+                                      {/* Activate Tool */}
+                                      <button
+                                        onClick={() => handleToolClick(tool)}
+                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-900/30 hover:bg-blue-800/50 border border-blue-700/30 hover:border-blue-600/50 transition-all duration-200 text-left"
+                                      >
+                                        <ToolIcon className="w-3 h-3 text-blue-300" />
+                                        <span className="text-xs text-blue-300">Activate {tool.name}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                             </div>
-
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff"
-                              className="hidden"
-                              onChange={handleFileChange}
-                            />
-                          </div>
-                        </div>
-                      )}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -372,66 +462,25 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* Upload area for mobile - simplified */}
-        {!collapsed && isMobile && (
-          <div className="px-3 py-4 border-t border-neutral-800/50">
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-all duration-300 ${
-                dragActive
-                  ? "border-neutral-400 bg-neutral-700/20"
-                  : "border-neutral-600 hover:border-neutral-400 hover:bg-neutral-800/30"
-              }`}
-            >
-              <div className="flex items-center justify-center space-x-3">
-                <Upload className="h-4 w-4 text-neutral-300" />
-                <div className="text-left">
-                  <p className="text-xs font-medium text-neutral-300">
-                    {uploadedFileName ? uploadedFileName : "Upload File"}
-                  </p>
-                  <div className="flex space-x-1 mt-1">
-                    <span className="text-[9px] px-1 py-0.5 bg-neutral-800/50 rounded text-neutral-400">PDF</span>
-                    <span className="text-[9px] px-1 py-0.5 bg-neutral-800/50 rounded text-neutral-400">JPG</span>
-                    <span className="text-[9px] px-1 py-0.5 bg-neutral-800/50 rounded text-neutral-400">PNG</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer - hidden on mobile when collapsed */}
-        {!collapsed && (
-          <div className="px-3 md:px-4 py-3 border-t border-neutral-800/50">
-            <div className="flex items-center justify-between text-[10px] text-neutral-500">
-              <span className="font-medium">Select the tool</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span>Online</span>
-              </div>
+        {/* Upload status */}
+        {uploadedFileName && !collapsed && (
+          <div className="px-3 md:px-4 py-3 border-t border-neutral-800/50 bg-neutral-900/30">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs text-neutral-300 truncate">{uploadedFileName}</span>
             </div>
           </div>
         )}
 
         {/* Drag overlay */}
         {dragActive && (
-          <div className="absolute inset-0 bg-neutral-700/10 border-2 border-dashed border-neutral-400 rounded-lg backdrop-blur-sm flex items-center justify-center z-40">
+          <div className="absolute inset-0 bg-neutral-900/80 border-2 border-dashed border-neutral-400 rounded-lg flex items-center justify-center z-50">
             <div className="text-center">
-              <Upload className="h-10 w-10 text-neutral-300 mx-auto mb-2 animate-bounce" />
-              <p className="text-sm font-medium text-white mb-1">Drop your files here</p>
-              <p className="text-xs text-neutral-400">PDF, JPG, PNG, TIF supported</p>
+              <Upload className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
+              <p className="text-sm text-neutral-300 font-medium">Drop file to upload</p>
             </div>
           </div>
         )}
-
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff"
-          className="hidden"
-          onChange={handleFileChange}
-        />
       </aside>
     </>
   );
