@@ -1,4 +1,4 @@
-// Sidebar.tsx
+// Sidebar.tsx - Fixed version with consistent dark theme
 import { useRef, useState, useEffect } from "react";
 import {
   ListChecks,
@@ -228,7 +228,7 @@ export function Sidebar({
       <aside
         className={
           "relative flex h-full flex-col transition-all duration-300 z-50 " +
-          "bg-[#16181d] text-neutral-100 border-r border-neutral-800/70 " +
+          "bg-neutral-900 text-neutral-100 border-r border-neutral-800 " +
           (collapsed
             ? "w-12 md:w-16"
             : isMobile
@@ -255,7 +255,7 @@ export function Sidebar({
           <div className="absolute top-4 right-4 z-10">
             <button
               onClick={onToggle}
-              className="w-8 h-8 rounded-full bg-neutral-700 hover:bg-neutral-600 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center transition-colors"
             >
               <X className="h-4 w-4 text-neutral-300" />
             </button>
@@ -269,25 +269,25 @@ export function Sidebar({
             isMobile
               ? "absolute top-1/2 -right-3 -translate-y-1/2 cursor-pointer z-45 " +
               "flex items-center justify-center h-10 w-3 " +
-              "bg-[#181a1e] hover:bg-[#22252b] " +
-              "rounded-r-md transition-all duration-200 border border-neutral-800 " +
+              "bg-neutral-800 hover:bg-neutral-700 " +
+              "rounded-r-md transition-all duration-200 border border-neutral-700 " +
               "group shadow-lg"
               : "absolute top-1/2 -right-4 -translate-y-1/2 cursor-pointer z-45 " +
               "flex items-center justify-center h-14 w-4 " +
-              "bg-[#181a1e] hover:bg-[#22252b] " +
-              "rounded-r-md transition-all duration-200 border border-neutral-800 " +
+              "bg-neutral-800 hover:bg-neutral-700 " +
+              "rounded-r-md transition-all duration-200 border border-neutral-700 " +
               "group shadow-lg"
           }
         >
           <div className="flex flex-col items-center space-y-1">
-            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-500 group-hover:bg-neutral-300 transition-colors rounded-full`} />
-            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-500 group-hover:bg-neutral-300 transition-colors rounded-full`} />
-            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-500 group-hover:bg-neutral-300 transition-colors rounded-full`} />
+            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-400 group-hover:bg-neutral-300 transition-colors rounded-full`} />
+            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-400 group-hover:bg-neutral-300 transition-colors rounded-full`} />
+            <div className={`${isMobile ? 'w-2 h-0.5' : 'w-2.5 h-0.5'} bg-neutral-400 group-hover:bg-neutral-300 transition-colors rounded-full`} />
           </div>
         </div>
 
         {/* Header */}
-        <div className={`px-3 md:px-4 ${isMobile ? 'py-4 pt-6' : 'py-6'} border-b border-neutral-800/50 flex items-center justify-center`}>
+        <div className={`px-3 md:px-4 ${isMobile ? 'py-4 pt-6' : 'py-6'} border-b border-neutral-800 flex items-center justify-center`}>
           {collapsed ? (
             <div className="flex items-center justify-center">
               <div className="w-6 md:w-8 h-6 md:h-8 rounded-lg bg-transparent flex items-center justify-center shadow-none">
@@ -326,8 +326,8 @@ export function Sidebar({
                   className={
                     "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
                     (isActive
-                      ? "bg-neutral-800/80 text-white shadow-lg border border-neutral-700/50"
-                      : "text-neutral-400 hover:bg-neutral-800/50 hover:text-white") +
+                      ? "bg-neutral-800 text-white shadow-lg border border-neutral-700"
+                      : "text-neutral-400 hover:bg-neutral-800 hover:text-white") +
                     (collapsed ? " justify-center" : " justify-between")
                   }
                 >
@@ -352,7 +352,7 @@ export function Sidebar({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
                       }}
-                      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700/50 rounded cursor-pointer select-none"
+                      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700 rounded cursor-pointer select-none"
                     >
                       <ChevronDown
                         className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
@@ -370,10 +370,10 @@ export function Sidebar({
                 {/* Tools Dropdown */}
                 {isExpanded && !collapsed && (
                   <div className="mt-2 mx-2 animate-in slide-in-from-top-2 duration-300">
-                    <div className="bg-[#1a1d23] rounded-lg border border-neutral-700/50 shadow-xl overflow-hidden">
-                      <div className="p-4 border-b border-neutral-700/30">
+                    <div className="bg-neutral-800 rounded-lg border border-neutral-700 shadow-xl overflow-hidden">
+                      <div className="p-4 border-b border-neutral-700">
                         <div className="flex items-start space-x-3">
-                          <div className="w-8 h-8 rounded-lg bg-neutral-800/50 flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-neutral-700 flex items-center justify-center flex-shrink-0">
                             <item.detailIcon className="w-4 h-4 text-neutral-300" />
                           </div>
                           <div>
@@ -392,7 +392,7 @@ export function Sidebar({
 
                           return (
                             <div key={idx} className="mb-1">
-                              {/* Tool Button */}
+                              {/* Tool Button - FIXED: Removed transparency, using solid colors */}
                               <button
                                 onClick={() => {
                                   if (tool.action === "upload") {
@@ -401,7 +401,7 @@ export function Sidebar({
                                     toggleTool(toolId);
                                   }
                                 }}
-                                className="group w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-all duration-200 bg-neutral-800/30 hover:bg-neutral-700/50 border border-neutral-700/30 hover:border-neutral-600/50"
+                                className="group w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-all duration-200 bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 hover:border-neutral-500 text-neutral-200 hover:text-white"
                               >
                                 <div className="flex items-center space-x-3">
                                   <ToolIcon className="w-4 h-4 text-neutral-300 group-hover:text-white transition-colors" />
@@ -421,7 +421,7 @@ export function Sidebar({
                               {/* Tool Details Dropdown */}
                               {isToolExpanded && tool.action !== "upload" && (
                                 <div className="mt-1 ml-4 animate-in slide-in-from-top-1 duration-200">
-                                  <div className="bg-neutral-900/50 rounded-lg border border-neutral-700/30 p-3">
+                                  <div className="bg-neutral-800 rounded-lg border border-neutral-700 p-3">
                                     <p className="text-xs text-neutral-400 leading-relaxed mb-3">
                                       {tool.description}
                                     </p>
@@ -430,20 +430,20 @@ export function Sidebar({
                                       {["image", "stamp", "rectangle"].includes(tool.toolType) && (
                                         <button
                                           onClick={() => fileInputRef.current?.click()}
-                                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-neutral-800/50 hover:bg-neutral-700/70 border border-neutral-600/30 hover:border-neutral-500/50 transition-all duration-200 text-left"
+                                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 hover:border-neutral-500 transition-all duration-200 text-left"
                                         >
                                           <Upload className="w-3 h-3 text-neutral-300" />
                                           <span className="text-xs text-neutral-300">Upload Image</span>
                                         </button>
                                       )}
 
-                                      {/* Activate Tool */}
+                                      {/* Activate Tool - FIXED: Solid blue colors */}
                                       <button
                                         onClick={() => handleToolClick(tool)}
-                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-900/30 hover:bg-blue-800/50 border border-blue-700/30 hover:border-blue-600/50 transition-all duration-200 text-left"
+                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 border border-blue-600 hover:border-blue-500 transition-all duration-200 text-left"
                                       >
-                                        <ToolIcon className="w-3 h-3 text-blue-300" />
-                                        <span className="text-xs text-blue-300">Activate {tool.name}</span>
+                                        <ToolIcon className="w-3 h-3 text-blue-200" />
+                                        <span className="text-xs text-blue-200">Activate {tool.name}</span>
                                       </button>
                                     </div>
                                   </div>
@@ -464,7 +464,7 @@ export function Sidebar({
 
         {/* Upload status */}
         {uploadedFileName && !collapsed && (
-          <div className="px-3 md:px-4 py-3 border-t border-neutral-800/50 bg-neutral-900/30">
+          <div className="px-3 md:px-4 py-3 border-t border-neutral-800 bg-neutral-800">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <span className="text-xs text-neutral-300 truncate">{uploadedFileName}</span>
