@@ -280,21 +280,22 @@ export function Sidebar({
       )}
 
       <aside
-        className={
-          "relative flex h-full flex-col transition-all duration-300 z-50 " +
-          "bg-neutral-900 text-neutral-100 border-r border-neutral-800 " +
-          (collapsed
-            ? "w-12 md:w-16"
-            : isMobile
-              ? "w-80 fixed left-0 top-0 bottom-0 shadow-2xl"
-              : "w-80"
-          )
-        }
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
+  className={
+    "tools-sidebar relative flex h-full flex-col transition-all duration-300 z-50 " +
+    "bg-neutral-900 text-neutral-100 border-r border-neutral-800 " +
+    (collapsed
+      ? "w-12 md:w-16"
+      : isMobile
+        ? "w-80 fixed left-0 top-0 bottom-0 shadow-2xl"
+        : "w-80"
+    )
+  }
+  onDragEnter={handleDrag}
+  onDragLeave={handleDrag}
+  onDragOver={handleDrag}
+  onDrop={handleDrop}
+>
+
         {/* Hidden file input */}
         <input
           ref={fileInputRef}

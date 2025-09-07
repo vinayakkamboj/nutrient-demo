@@ -1,0 +1,19 @@
+/* src/styles/sidebar-fix.css */
+/* Force sidebar buttons to use custom dark base color */
+
+.tools-sidebar button {
+  background-color: #201c1c !important; /* your custom base color */
+  color: #d1d5db !important;            /* Tailwind text-neutral-300 */
+  border-color: #2a2626 !important;     /* slightly lighter border */
+}
+
+.tools-sidebar button:hover {
+  background-color: #2c2727 !important; /* lighter on hover */
+  color: #ffffff !important;            /* white text on hover */
+  border-color: #3b3636 !important;
+}
+
+.tools-sidebar button:active {
+  background-color: #3b3636 !important; /* even lighter when pressed */
+  border-color: #4a4545 !important;
+}

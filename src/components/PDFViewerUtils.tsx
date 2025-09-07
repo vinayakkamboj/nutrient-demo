@@ -12,21 +12,61 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
     // Tool activation mapping based on Nutrient Web SDK interaction modes
     const toolActivationMap: Record<ToolType, () => void> = {
       // VIEWER MODE TOOLS
-      "office-documents": () => {
-        // Handle office document viewing - no specific interaction mode needed
-        console.log("Office documents viewing enabled");
+      "office-documents": async () => {
+        try {
+          instance.setToolbarItems((items: any[]) => [
+            ...items,
+            {
+              type: "custom",
+              id: "office-document",
+              title: "Office document",
+              onPress: async () => {
+                await instance.load?.({
+                  document: "https://example.com/sample.docx"
+                });
+              }
+            }
+          ]);
+          console.log("PDFViewer: Office document action added to toolbar");
+        } catch (e) {
+          console.error("Failed to enable office document action:", e);
+        }
       },
+
       "magazine-view": () => {
-        // Set spread mode for magazine-style viewing
-        instance.setViewState((vs: any) => 
-          vs.set("spreadMode", NutrientViewer.SpreadMode.DOUBLE_PAGE)
-        );
+        try {
+          instance.setToolbarItems((items: any[]) => [
+            ...items,
+            {
+              type: "custom",
+              id: "magazine-view",
+              title: "Magazine",
+              onPress: () => {
+                instance.setViewState(
+                  () =>
+                    new NutrientViewer.ViewState({
+                      scrollMode: NutrientViewer.ScrollMode.PER_SPREAD,
+                      layoutMode: NutrientViewer.LayoutMode.DOUBLE,
+                      keepFirstSpreadAsSinglePage: true,
+                    })
+                );
+              }
+            }
+          ]);
+          console.log("PDFViewer: Magazine view action added to toolbar");
+        } catch (e) {
+          console.error("Failed to enable magazine view:", e);
+        }
       },
+
+
       "search": () => {
-        // Activate search functionality
-        instance.setViewState((vs: any) => 
-          vs.set("sidebarMode", NutrientViewer.SidebarMode.DOCUMENT_OUTLINE)
-            .set("interactionMode", null)
+        // Enter built-in Search mode (focuses the search input)
+        instance.setViewState((vs: any) =>
+          vs
+            .set("interactionMode", NutrientViewer.InteractionMode.SEARCH)
+            // Optionally show a sidebar (or set to null if you don’t want one)
+            .set("sidebarMode", null)
         );
       },
       "upload": () => {
@@ -37,11 +77,11 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       // ANNOTATION MODE TOOLS
       "image": () => {
         // Activate image annotation mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.IMAGE)
         );
         // Also ensure the image toolbar item is selected
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "image" || item.type === "image-annotation"
@@ -50,11 +90,11 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
       "stamp": () => {
         // Activate stamp annotation mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.STAMP_PICKER)
         );
         // Select stamp toolbar item
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "stamp" || item.type === "stamp-picker"
@@ -63,11 +103,11 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
       "rectangle": () => {
         // Activate rectangle annotation mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_RECTANGLE)
         );
         // Select rectangle toolbar item
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "rectangle" || item.type === "shape-rectangle"
@@ -76,11 +116,11 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
       "ink-highlighter": () => {
         // Activate highlighter annotation mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.INK)
         );
         // Select ink highlighter toolbar item
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "ink-highlighter" || item.type === "highlighter"
@@ -89,89 +129,88 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
 
       "line": () => {
-  instance.setViewState((vs: any) =>
-    vs.set("interactionMode", NutrientViewer.InteractionMode.LINE)
-  );
-  instance.setToolbarItems((items: any[]) =>
-    items.map((item: any) => ({
-      ...item,
-      selected: item.type === "line"
-    }))
-  );
-},
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_LINE)
+        );
+        instance.setToolbarItems((items: any[]) =>
+          items.map((item: any) => ({
+            ...item,
+            selected: item.type === "line"
+          }))
+        );
+      },
 
-"arrow": () => {
-  instance.setViewState((vs: any) =>
-    vs.set("interactionMode", NutrientViewer.InteractionMode.ARROW)
-  );
-  instance.setToolbarItems((items: any[]) =>
-    items.map((item: any) => ({
-      ...item,
-      selected: item.type === "arrow"
-    }))
-  );
-},
+      "arrow": () => {
+        instance.setCurrentAnnotationPreset("arrow"); // ensure the variant’s preset is active
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_LINE)
+        );
+        instance.setToolbarItems((items: any[]) =>
+          items.map((i: any) => ({ ...i, selected: i.type === "arrow" }))
+        );
+      },
 
-"ellipse": () => {
-  instance.setViewState((vs: any) =>
-    vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_ELLIPSE)
-  );
-  instance.setToolbarItems((items: any[]) =>
-    items.map((item: any) => ({
-      ...item,
-      selected: item.type === "ellipse" || item.type === "shape-ellipse"
-    }))
-  );
-},
+      "ellipse": () => {
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_ELLIPSE)
+        );
+        instance.setToolbarItems((items: any[]) =>
+          items.map((item: any) => ({
+            ...item,
+            selected: item.type === "ellipse" || item.type === "shape-ellipse"
+          }))
+        );
+      },
 
-"polygon": () => {
-  instance.setViewState((vs: any) =>
-    vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_POLYGON)
-  );
-  instance.setToolbarItems((items: any[]) =>
-    items.map((item: any) => ({
-      ...item,
-      selected: item.type === "polygon" || item.type === "shape-polygon"
-    }))
-  );
-},
+      "polygon": () => {
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_POLYGON)
+        );
+        instance.setToolbarItems((items: any[]) =>
+          items.map((item: any) => ({
+            ...item,
+            selected: item.type === "polygon" || item.type === "shape-polygon"
+          }))
+        );
+      },
 
-"polyline": () => {
-  instance.setViewState((vs: any) =>
-    vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_POLYLINE)
-  );
-  instance.setToolbarItems((items: any[]) =>
-    items.map((item: any) => ({
-      ...item,
-      selected: item.type === "polyline" || item.type === "shape-polyline"
-    }))
-  );
-},
+      "polyline": () => {
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.SHAPE_POLYLINE)
+        );
+        instance.setToolbarItems((items: any[]) =>
+          items.map((item: any) => ({
+            ...item,
+            selected: item.type === "polyline" || item.type === "shape-polyline"
+          }))
+        );
+      },
 
 
       // FORM MODE TOOLS
       "form-text": () => {
-        // Activate text form field creation
-        instance.setViewState((vs: any) => 
-          vs.set("interactionMode", NutrientViewer.InteractionMode.FORM_TEXT)
+        // Ensure Form Creator is in the toolbar
+        instance.setToolbarItems((items: any[]) => [
+          ...items,
+          { type: "form-creator" }
+        ]);
+
+        // Switch to form creator mode (Text Widget available in secondary toolbar)
+        instance.setViewState((vs: any) =>
+          vs.set("interactionMode", NutrientViewer.InteractionMode.FORM_CREATOR)
             .set("formDesignMode", true)
         );
-        // Select form text toolbar item
-        instance.setToolbarItems((items: any[]) => 
-          items.map((item: any) => ({
-            ...item,
-            selected: item.type === "form-text" || item.type === "text-form-field"
-          }))
-        );
+
+        console.log("PDFViewer: Activated Form Text Field");
       },
       "form-signature": () => {
         // Activate signature form field creation
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.SIGNATURE)
             .set("formDesignMode", true)
         );
         // Select signature toolbar item
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "signature" || item.type === "form-signature"
@@ -180,7 +219,7 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
       "forms": () => {
         // Toggle forms sidebar and enable form design mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("sidebarMode", NutrientViewer.SidebarMode.FORMS)
             .set("formDesignMode", true)
             .set("interactionMode", null)
@@ -191,8 +230,9 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       "page-manipulation": () => {
         // Open thumbnails sidebar for page management
         instance.setViewState((vs: any) =>
-          vs.set("sidebarMode", NutrientViewer.SidebarMode.THUMBNAILS)
-            .set("interactionMode", null)
+          vs
+            .set("sidebarMode", NutrientViewer.SidebarMode.THUMBNAILS)
+            .set("interactionMode", NutrientViewer.InteractionMode.DOCUMENT_EDITOR)
         );
 
         // Ensure page manipulation features are enabled if SDK supports it
@@ -214,29 +254,28 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
       },
 
       "crop-pages": () => {
-        // Reset interaction mode (don't rely on InteractionMode.CROP)
+        // Enter Crop Mode
         instance.setViewState((vs: any) =>
-          vs.set("interactionMode", null)
+          vs.set("interactionMode", NutrientViewer.InteractionMode.DOCUMENT_CROP)
         );
 
-        // Select the proper Nutrient crop toolbar item
+        // Optional: mark your toolbar item as selected (purely visual)
         instance.setToolbarItems((items: any[]) =>
-          items.map((item: any) => ({
-            ...item,
-            selected: item.type === "document-crop",
-          }))
+          items.map((item: any) => ({ ...item, selected: item.type === "document-crop" }))
         );
       },
 
       "content-editor": () => {
-        // Reset interaction mode (don't force DOCUMENT_EDITOR)
+        // Enter Content Editor mode
         instance.setViewState((vs: any) =>
-          vs.set("interactionMode", null)
+          vs
+            .set("sidebarMode", NutrientViewer.SidebarMode.CONTENT_EDITOR)
+            .set("interactionMode", NutrientViewer.InteractionMode.CONTENT_EDITOR)
         );
 
-        // Select the proper content editor toolbar item
+        // Optionally reflect selection state in your toolbar (visual only)
         instance.setToolbarItems((items: any[]) =>
-          items.map((item: any) => ({
+          items.map((item) => ({
             ...item,
             selected: item.type === "content-editor",
           }))
@@ -245,11 +284,11 @@ export const activateTool = (toolType: ToolType, toolName: string, instance: any
 
       "edit-text": () => {
         // Activate text editing mode
-        instance.setViewState((vs: any) => 
+        instance.setViewState((vs: any) =>
           vs.set("interactionMode", NutrientViewer.InteractionMode.TEXT)
         );
         // Select text editing toolbar item
-        instance.setToolbarItems((items: any[]) => 
+        instance.setToolbarItems((items: any[]) =>
           items.map((item: any) => ({
             ...item,
             selected: item.type === "text" || item.type === "edit-text"
@@ -366,7 +405,7 @@ export const applyModeToInstance = (modeToApply: ViewerMode, instance: any, Nutr
       case "VIEWER":
       default:
         instance.setViewState((vs: any) =>
-          vs.set("interactionMode", null)
+          vs.set("interactionMode", null).set("sidebarMode", null)
         );
 
         const allowedTypes = [
