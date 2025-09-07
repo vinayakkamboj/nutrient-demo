@@ -300,8 +300,8 @@ export function Sidebar({
                 <LayoutDashboard className="h-3 md:h-4 w-3 md:w-4 text-neutral-400" />
               </div>
               <div>
-                <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-white`}>Tools</h2>
-                <p className="text-xs text-neutral-400">Select the feature</p>
+                <h2 className={`${isMobile ? 'text-base' : 'text-md'} font-semibold text-white`}>Tools</h2>
+                <p className="text-sm text-neutral-400">Select the feature</p>
               </div>
             </div>
           )}
@@ -318,54 +318,60 @@ export function Sidebar({
               <div key={item.name} className="relative">
                 {/* Main Tab Button */}
                 <button
-                  title={collapsed ? item.name : undefined}
-                  onClick={() => {
-                    onSelectMode(item.mode);
-                    if (!collapsed) toggleDropdown(item.mode);
-                  }}
-                  className={
-                    "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
-                    (isActive
-                      ? "bg-neutral-800 text-white shadow-lg border border-neutral-700"
-                      : "text-neutral-400 hover:bg-neutral-800 hover:text-white") +
-                    (collapsed ? " justify-center" : " justify-between")
-                  }
-                >
-                  <div className="flex items-center">
-                    <Icon
-                      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${isActive
-                          ? "text-neutral-300"
-                          : "text-neutral-400 group-hover:text-neutral-300"
-                        }`}
-                    />
-                    {!collapsed && <span className="ml-2 md:ml-3 tracking-tight">{item.name}</span>}
-                  </div>
+  title={collapsed ? item.name : undefined}
+  onClick={() => {
+    onSelectMode(item.mode);
+    if (!collapsed) toggleDropdown(item.mode);
+  }}
+  className={
+    "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
+    (isActive
+      ? "bg-neutral-800 text-white shadow-lg border border-neutral-700"
+      : "bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-neutral-800") +
+    (collapsed ? " justify-center" : " justify-between")
+  }
+>
+  <div className="flex items-center">
+    <Icon
+      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${
+        isActive
+          ? "text-neutral-300"
+          : "text-neutral-400 group-hover:text-neutral-300"
+      }`}
+    />
+    {!collapsed && (
+      <span className="ml-2 md:ml-3 tracking-tight">{item.name}</span>
+    )}
+  </div>
 
-                  {!collapsed && (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(item.mode);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
-                      }}
-                      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700 rounded cursor-pointer select-none"
-                    >
-                      <ChevronDown
-                        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
-                          }`}
-                      />
-                    </div>
-                  )}
+  {!collapsed && (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleDropdown(item.mode);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
+      }}
+      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700 rounded cursor-pointer select-none"
+    >
+      <ChevronDown
+        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${
+          isExpanded ? "rotate-180" : ""
+        }`}
+      />
+    </div>
+  )}
 
-                  <span
-                    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0"
-                      }`}
-                  />
-                </button>
+  <span
+    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${
+      isActive ? "opacity-100" : "opacity-0"
+    }`}
+  />
+</button>
+
 
                 {/* Tools Dropdown */}
                 {isExpanded && !collapsed && (
@@ -437,28 +443,13 @@ export function Sidebar({
                                         </button>
                                       )}
 
-                                      {/* Activate Tool - BULLETPROOF: Inline styles for blue theme */}
+                                      {/* Activate Tool - FIXED: Solid blue colors */}
                                       <button
                                         onClick={() => handleToolClick(tool)}
-                                        className="flex items-center space-x-2 px-3 py-2 rounded-md transition-all duration-200 text-left"
-                                        style={{
-                                          backgroundColor: '#1D4ED8',
-                                          borderColor: '#2563EB',
-                                          borderWidth: '1px',
-                                          borderStyle: 'solid',
-                                          color: '#DBEAFE'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          e.currentTarget.style.backgroundColor = '#2563EB';
-                                          e.currentTarget.style.borderColor = '#3B82F6';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          e.currentTarget.style.backgroundColor = '#1D4ED8';
-                                          e.currentTarget.style.borderColor = '#2563EB';
-                                        }}
+                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 border border-blue-600 hover:border-blue-500 transition-all duration-200 text-left"
                                       >
-                                        <ToolIcon className="w-3 h-3" style={{ color: '#DBEAFE' }} />
-                                        <span className="text-xs" style={{ color: '#DBEAFE' }}>Activate {tool.name}</span>
+                                        <ToolIcon className="w-3 h-3 text-blue-200" />
+                                        <span className="text-xs text-blue-200">Activate {tool.name}</span>
                                       </button>
                                     </div>
                                   </div>
