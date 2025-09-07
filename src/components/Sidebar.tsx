@@ -437,13 +437,28 @@ export function Sidebar({
                                         </button>
                                       )}
 
-                                      {/* Activate Tool - FIXED: Solid blue colors */}
+                                      {/* Activate Tool - BULLETPROOF: Inline styles for blue theme */}
                                       <button
                                         onClick={() => handleToolClick(tool)}
-                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 border border-blue-600 hover:border-blue-500 transition-all duration-200 text-left"
+                                        className="flex items-center space-x-2 px-3 py-2 rounded-md transition-all duration-200 text-left"
+                                        style={{
+                                          backgroundColor: '#1D4ED8',
+                                          borderColor: '#2563EB',
+                                          borderWidth: '1px',
+                                          borderStyle: 'solid',
+                                          color: '#DBEAFE'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.backgroundColor = '#2563EB';
+                                          e.currentTarget.style.borderColor = '#3B82F6';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.backgroundColor = '#1D4ED8';
+                                          e.currentTarget.style.borderColor = '#2563EB';
+                                        }}
                                       >
-                                        <ToolIcon className="w-3 h-3 text-blue-200" />
-                                        <span className="text-xs text-blue-200">Activate {tool.name}</span>
+                                        <ToolIcon className="w-3 h-3" style={{ color: '#DBEAFE' }} />
+                                        <span className="text-xs" style={{ color: '#DBEAFE' }}>Activate {tool.name}</span>
                                       </button>
                                     </div>
                                   </div>
