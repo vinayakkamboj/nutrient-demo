@@ -11,7 +11,6 @@ import {
   FileCheck,
   LayoutDashboard,
   X,
-  Image,
   Stamp,
   Shapes,
   Type,
@@ -19,7 +18,42 @@ import {
   Crop,
   FileText,
 } from "lucide-react";
-import type { ViewerMode } from "./PDFViewer";
+import type { ViewerMode } from "./PDFViewerUtils";
+// --- add below your imports ---
+const LineIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <line x1="4" y1="20" x2="20" y2="4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ArrowIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <path d="M21 12l-9-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 12H3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 12l-9 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const RectIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const EllipseIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <ellipse cx="12" cy="12" rx="8" ry="5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const PolygonIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <path d="M12 3l7 4v8l-7 4-7-4V7l7-4z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const PolylineIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+    <polyline points="3 7 9 13 15 7 21 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+// --- end icons ---
+
 
 // Export tool types for PDFViewer integration
 export type ToolType =
@@ -29,7 +63,12 @@ export type ToolType =
   | "upload"
   | "image"
   | "stamp"
+  | "line"
+  | "arrow"
   | "rectangle"
+  | "ellipse"
+  | "polygon"
+  | "polyline"
   | "ink-highlighter"
   | "form-text"
   | "form-signature"
@@ -39,14 +78,16 @@ export type ToolType =
   | "content-editor"
   | "edit-text";
 
+
 export type ToolAction = "toggle" | "activate" | "upload";
 
 export interface ToolConfig {
   name: string;
   icon: any;
-  description: string;
-  toolType: ToolType;
-  action: ToolAction;
+  description?: string;
+  toolType?: ToolType; // optional because Add Shapes will use subTools
+  action?: ToolAction;
+  subTools?: Array<{ name: string; icon: any; toolType: ToolType }>;
 }
 
 interface SidebarProps {
@@ -86,14 +127,27 @@ const items: FeatureItem[] = [
     mode: "ANNOTATIONS",
     description: "A plug-and-play PDF annotation library with more than 15 tools that lets you highlight, draw, and add shapes, texts, notes, comments, and more.",
     tools: [
-      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
-      { name: "Add Image", icon: Image, description: "Insert images into document", toolType: "image", action: "activate" },
+      {
+        name: "Add Shape",
+        icon: Shapes,
+        description: "Draw shapes: Line, Arrow, Rectangle, Ellipse, Polygon, Polyline",
+        action: "toggle",
+        subTools: [
+          { name: "Line", icon: LineIcon, toolType: "line" },
+          { name: "Arrow", icon: ArrowIcon, toolType: "arrow" },
+          { name: "Rectangle", icon: RectIcon, toolType: "rectangle" },
+          { name: "Ellipse", icon: EllipseIcon, toolType: "ellipse" },
+          { name: "Polygon", icon: PolygonIcon, toolType: "polygon" },
+          { name: "Polyline", icon: PolylineIcon, toolType: "polyline" },
+        ],
+      },
+      // { name: "Add Image", icon: Image, description: "Insert images into document", toolType: "image", action: "activate" },
       { name: "Add Stamp", icon: Stamp, description: "Add custom stamps", toolType: "stamp", action: "activate" },
-      { name: "Add Shapes", icon: Shapes, description: "Draw geometric shapes", toolType: "rectangle", action: "activate" },
       { name: "Highlight Text", icon: Highlighter, description: "Highlight content", toolType: "ink-highlighter", action: "activate" },
     ],
     detailIcon: Highlighter,
   },
+
   {
     name: "Forms",
     icon: ListChecks,
@@ -195,7 +249,7 @@ export function Sidebar({
 
   const toggleDropdown = (mode: ViewerMode) => {
     if (collapsed) return;
-    setExpandedDropdown((prev) => (prev === mode ? null : mode));
+    setExpandedDropdown((prev: ViewerMode | null) => (prev === mode ? null : mode));
     setExpandedTool(null); // Close any expanded tool when switching modes
   };
 
@@ -207,7 +261,7 @@ export function Sidebar({
   const handleToolClick = (tool: ToolConfig) => {
     if (tool.action === "upload") {
       fileInputRef.current?.click();
-    } else {
+    } else if (tool.toolType) {
       onToolAction?.(tool.toolType, tool.name);
     }
   };
@@ -318,59 +372,56 @@ export function Sidebar({
               <div key={item.name} className="relative">
                 {/* Main Tab Button */}
                 <button
-  title={collapsed ? item.name : undefined}
-  onClick={() => {
-    onSelectMode(item.mode);
-    if (!collapsed) toggleDropdown(item.mode);
-  }}
-  className={
-    "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
-    (isActive
-      ? "bg-neutral-800 text-white shadow-lg border border-neutral-700"
-      : "bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-neutral-800") +
-    (collapsed ? " justify-center" : " justify-between")
-  }
->
-  <div className="flex items-center">
-    <Icon
-      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${
-        isActive
-          ? "text-neutral-300"
-          : "text-neutral-400 group-hover:text-neutral-300"
-      }`}
-    />
-    {!collapsed && (
-      <span className="ml-2 md:ml-3 tracking-tight">{item.name}</span>
-    )}
-  </div>
+                  title={collapsed ? item.name : undefined}
+                  onClick={() => {
+                    onSelectMode(item.mode);
+                    if (!collapsed) toggleDropdown(item.mode);
+                  }}
+                  className={
+                    "group relative w-full flex items-center rounded-lg px-2 md:px-3 py-2 md:py-3 text-xs md:text-[13px] font-medium font-['Inter'] transition-all duration-200 " +
+                    (isActive
+                      ? "bg-neutral-800 text-white shadow-lg border border-neutral-700"
+                      : "bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-white border border-neutral-800") +
+                    (collapsed ? " justify-center" : " justify-between")
+                  }
+                >
+                  <div className="flex items-center">
+                    <Icon
+                      className={`h-4 md:h-[18px] w-4 md:w-[18px] flex-shrink-0 transition-colors ${isActive
+                        ? "text-neutral-300"
+                        : "text-neutral-400 group-hover:text-neutral-300"
+                        }`}
+                    />
+                    {!collapsed && (
+                      <span className="ml-2 md:ml-3 tracking-tight">{item.name}</span>
+                    )}
+                  </div>
 
-  {!collapsed && (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(e) => {
-        e.stopPropagation();
-        toggleDropdown(item.mode);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
-      }}
-      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700 rounded cursor-pointer select-none"
-    >
-      <ChevronDown
-        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${
-          isExpanded ? "rotate-180" : ""
-        }`}
-      />
-    </div>
-  )}
+                  {!collapsed && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(item.mode);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") toggleDropdown(item.mode);
+                      }}
+                      className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-neutral-700 rounded cursor-pointer select-none"
+                    >
+                      <ChevronDown
+                        className={`h-3 w-3 text-neutral-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
+                          }`}
+                      />
+                    </div>
+                  )}
 
-  <span
-    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${
-      isActive ? "opacity-100" : "opacity-0"
-    }`}
-  />
-</button>
+                  <span
+                    className={`pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400 transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-0"
+                      }`}
+                  />
+                </button>
 
 
                 {/* Tools Dropdown */}
@@ -428,30 +479,53 @@ export function Sidebar({
                               {isToolExpanded && tool.action !== "upload" && (
                                 <div className="mt-1 ml-4 animate-in slide-in-from-top-1 duration-200">
                                   <div className="bg-neutral-800 rounded-lg border border-neutral-700 p-3">
-                                    <p className="text-xs text-neutral-400 leading-relaxed mb-3">
-                                      {tool.description}
-                                    </p>
-                                    <div className="flex flex-col space-y-2">
-                                      {/* Upload Image Option - only for certain tools */}
-                                      {["image", "stamp", "rectangle"].includes(tool.toolType) && (
-                                        <button
-                                          onClick={() => fileInputRef.current?.click()}
-                                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 hover:border-neutral-500 transition-all duration-200 text-left"
-                                        >
-                                          <Upload className="w-3 h-3 text-neutral-300" />
-                                          <span className="text-xs text-neutral-300">Upload Image</span>
-                                        </button>
-                                      )}
+                                    {tool.description && (
+                                      <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                                        {tool.description}
+                                      </p>
+                                    )}
 
-                                      {/* Activate Tool - FIXED: Solid blue colors */}
-                                      <button
-                                        onClick={() => handleToolClick(tool)}
-                                        className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 border border-blue-600 hover:border-blue-500 transition-all duration-200 text-left"
-                                      >
-                                        <ToolIcon className="w-3 h-3 text-blue-200" />
-                                        <span className="text-xs text-blue-200">Activate {tool.name}</span>
-                                      </button>
-                                    </div>
+                                    {tool.subTools ? (
+                                      // --- Shapes grid ---
+                                      <div className="grid grid-cols-3 gap-2">
+                                        {tool.subTools.map((s, si) => {
+                                          const SubIcon = s.icon;
+                                          return (
+                                            <button
+                                              key={si}
+                                              onClick={() => onToolAction?.(s.toolType, s.name)}
+                                              className="flex flex-col items-center justify-center p-2 rounded-md bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 hover:border-neutral-500 transition-colors"
+                                              title={s.name}
+                                            >
+                                              <SubIcon className="w-5 h-5 text-neutral-200" />
+                                              <span className="text-[11px] text-neutral-300 mt-1">{s.name}</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      // --- Normal tool controls ---
+                                      <div className="flex flex-col space-y-2">
+                                        {typeof tool.toolType === "string" &&
+                                          ["image", "stamp", "rectangle"].includes(tool.toolType) && (
+                                            <button
+                                              onClick={() => fileInputRef.current?.click()}
+                                              className="flex items-center space-x-2 px-3 py-2 rounded-md bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 hover:border-neutral-500 transition-colors text-left"
+                                            >
+                                              <Upload className="w-3 h-3 text-neutral-300" />
+                                              <span className="text-xs text-neutral-300">Upload Image</span>
+                                            </button>
+                                          )}
+
+                                        <button
+                                          onClick={() => handleToolClick(tool)}
+                                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-700 hover:bg-blue-600 border border-blue-600 hover:border-blue-500 transition-colors text-left"
+                                        >
+                                          <ToolIcon className="w-3 h-3 text-blue-200" />
+                                          <span className="text-xs text-blue-200">Activate {tool.name}</span>
+                                        </button>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
