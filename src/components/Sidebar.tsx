@@ -127,6 +127,7 @@ const items: FeatureItem[] = [
     mode: "ANNOTATIONS",
     description: "A plug-and-play PDF annotation library with more than 15 tools that lets you highlight, draw, and add shapes, texts, notes, comments, and more.",
     tools: [
+      { name: "Upload File", icon: Upload, description: "Upload new document", toolType: "upload", action: "upload" },
       {
         name: "Add Shape",
         icon: Shapes,
